@@ -1,0 +1,7 @@
+node_modules/
+.local/
+.sites-runtime/
+work/
+src/assets.generated.js
+.env
+.env.local

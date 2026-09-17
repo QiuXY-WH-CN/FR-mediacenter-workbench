@@ -1,0 +1,1 @@
+const V=require('../../utils/view');Page(V.page({data:{},renderState(s){this.setData({manager:s.manager,templates:s.templates.map(t=>({...t,canEdit:t.createdBy&&(s.user.role==='admin'||t.createdBy===s.user.id)}))})}}));

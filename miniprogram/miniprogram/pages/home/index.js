@@ -1,0 +1,2 @@
+const V=require('../../utils/view');
+Page(V.page({data:{ready:false,syncError:''},renderState(s){this.setData({ready:true,user:s.user,manager:s.manager,stats:['pending','active','review','done'].map(k=>({label:V.statuses[k],count:s.tasks.filter(t=>t.status===k).length})),tasks:s.tasks.filter(t=>!['done','blocked'].includes(t.status)).slice(0,6),events:s.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).filter(e=>(e.endDate||e.date)>=V.day()).slice(0,5),notices:s.notices.slice(0,5)})}}));

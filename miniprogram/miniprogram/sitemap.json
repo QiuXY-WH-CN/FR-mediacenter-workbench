@@ -1,0 +1,9 @@
+{
+  "desc": "内部协作工具不对外索引",
+  "rules": [
+    {
+      "action": "disallow",
+      "page": "*"
+    }
+  ]
+}

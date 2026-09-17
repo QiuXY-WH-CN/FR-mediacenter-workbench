@@ -1,0 +1,10 @@
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+const root=new URL('../',import.meta.url);
+const config=JSON.parse(await readFile(new URL('project.config.json',root),'utf8'));
+config.projectname='冯如学媒协作工作台';config.libVersion='3.17.3';config.condition={};config.packOptions={ignore:[],include:[]};
+await writeFile(new URL('project.config.json',root),JSON.stringify(config,null,2));
+const app=JSON.parse(await readFile(new URL('miniprogram/app.json',root),'utf8'));
+const titles=['工作台','账号登录','我的任务','日历与时间轴','我的','活动协作','活动详情','任务交付','编辑','流程模板','贡献积分','成员管理','SOP 知识库','连接设置'];
+for(let i=0;i<app.pages.length;i++)await writeFile(new URL('miniprogram/'+app.pages[i]+'.json',root),JSON.stringify({navigationBarTitleText:titles[i],usingComponents:{}},null,2));
+await writeFile(new URL('miniprogram/sitemap.json',root),JSON.stringify({desc:'内部协作工具不对外索引',rules:[{action:'disallow',page:'*'}]},null,2));
+console.log('Prepared native Mini Program page configurations.');

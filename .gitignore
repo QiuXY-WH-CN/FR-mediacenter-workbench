@@ -1,0 +1,15 @@
+# Node / pnpm
+node_modules/
+.pnpm-store/
+
+# Local runtime data and secrets
+.local/
+*.log
+
+# Deprecated old files
+_deprecated/
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/

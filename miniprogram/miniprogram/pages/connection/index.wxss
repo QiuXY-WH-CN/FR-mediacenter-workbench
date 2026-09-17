@@ -1,0 +1,1 @@
+.conn-options{display:grid;grid-template-columns:1fr 1fr;gap:18rpx;margin:28rpx 0}.conn-option{border:2rpx solid #ebe6df;border-radius:18rpx;padding:24rpx;background:#fff}.conn-option.selected{border-color:#ff881f;background:#fff6ed}.conn-option .h3{margin-bottom:8rpx}

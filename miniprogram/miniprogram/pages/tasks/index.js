@@ -1,0 +1,2 @@
+const V=require('../../utils/view');
+Page(V.page({data:{filter:'mine',tabs:[{id:'mine',label:'我负责'},{id:'review',label:'我验收'},{id:'all',label:'全部可见'}]},renderState(s){this.snapshot=s;this.filterTasks()},filterTasks(){const s=this.snapshot;if(s)this.setData({tasks:s.tasks.filter(t=>this.data.filter==='mine'?t.owner===s.user.id:this.data.filter==='review'?t.receiver===s.user.id:true)})},filter(e){this.setData({filter:e.currentTarget.dataset.id});this.filterTasks()}}));

@@ -1,0 +1,1 @@
+const V=require('../../utils/view');Page(V.page({data:{},renderState(s){this.setData({total:s.ledger.filter(x=>x.user===s.user.id).reduce((n,x)=>n+x.points,0),ledger:[...s.ledger].reverse().map(x=>({...x,name:s.names[x.user]||'已停用成员',timeLabel:V.textDate(x.time.slice(0,16))})),scope:s.user.role==='admin'?'全体记录':s.manager?'本部门记录':'我的记录'})}}));

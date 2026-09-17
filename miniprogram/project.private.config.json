@@ -1,0 +1,23 @@
+{
+  "libVersion": "3.17.3",
+  "projectname": "%E5%86%AF%E5%A6%82%E5%AD%A6%E5%AA%92%E5%8D%8F%E4%BD%9C%E5%B7%A5%E4%BD%9C%E5%8F%B0",
+  "condition": {},
+  "setting": {
+    "urlCheck": false,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": false,
+    "skylineRenderEnable": false,
+    "preloadBackgroundData": false,
+    "autoAudits": false,
+    "useApiHook": true,
+    "showShadowRootInWxmlPanel": true,
+    "useStaticServer": false,
+    "useLanDebug": false,
+    "showES6CompileOption": false,
+    "compileHotReLoad": true,
+    "checkInvalidKey": true,
+    "ignoreDevUnusedFiles": true,
+    "bigPackageSizeSupport": false,
+    "useIsolateContext": true
+  }
+}
