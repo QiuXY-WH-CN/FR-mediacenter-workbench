@@ -37,27 +37,6 @@ pnpm run test
 pnpm run test:mini
 ```
 
-## 2. 微信小程序端
-
-路径：`miniprogram/`
-
-用微信开发者工具打开该目录：
-
-```text
-C:\Users\QiuXY\Desktop\冯如学媒协作SOP工作台\miniprogram
-```
-
-- 小程序源码：`miniprogram/miniprogram/`
-- 云函数：`miniprogram/cloudfunctions/workbenchGateway/`
-- 默认连接：本机直连 `http://127.0.0.1:8766`
-- 云函数通道：在小程序“连接设置”选择“微信云函数”，填写云开发环境 ID。
-
-## 已清理内容
-
-- 旧 `新版工作台/`、旧 `微信小程序移植/`、旧根目录网页工程已不再作为最终项目目录。
-- 这些旧文件已统一移入 `_deprecated/` 文件夹，避免误用；确认新版运行正常后，可手动删除 `_deprecated/`。
-- 最终小程序目录为根目录下的 `miniprogram/`，请以该目录为准在开发者工具中打开。
-- 已去除 `.backup/`、`.qa/`、旧测试截图、旧编译缓存等无用内容。
 
 ## 注意
 
