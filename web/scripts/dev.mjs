@@ -20,7 +20,8 @@ const server = http.createServer(async(req,res)=>{
   try{
     const chunks=[];let size=0;
     for await(const c of req){size+=c.length;if(size>100000){res.writeHead(413);res.end('Request too large');return}chunks.push(c)}
-    const origin = `http://${req.headers.host || 'localhost'}`;
+    const proto = String(req.headers['x-forwarded-proto']||'').toLowerCase()==='https' ? 'https' : 'http';
+    const origin = `${proto}://${req.headers.host || 'localhost'}`;
     const url = new URL(req.url, origin);
     const hasBody = !['GET','HEAD'].includes(req.method||'GET');
     const request = new Request(url.toString(),{method:req.method,headers:new Headers(req.headers),...(hasBody?{body:Buffer.concat(chunks)}:{})});
