@@ -13,6 +13,7 @@ await mkdir('.local',{recursive:true});
 const DB = database(process.env.DB_PATH || '.local/preview.db');
 const exists = DB.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
 if(!exists) for(const f of (await readdir('drizzle')).filter(f=>f.endsWith('.sql')).sort()) DB.sqlite.exec(await readFile('drizzle/'+f,'utf8'));
+try{const envText=await readFile('.env','utf8');for(const line of envText.split(/\r?\n/)){const m=line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);if(m&&!process.env[m[1]])process.env[m[1]]=m[2]}}catch{}
 const bootstrapHash = process.env.BOOTSTRAP_HASH || createHash('sha256').update('local-preview-only-setup').digest('hex');
 if(!process.env.BOOTSTRAP_HASH) console.warn('[security] 使用默认本地初始化口令；公开部署请设置 BOOTSTRAP_HASH 环境变量。');
 const env = {DB, BOOTSTRAP_HASH: bootstrapHash};

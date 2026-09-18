@@ -4,6 +4,15 @@
 
 ## 运行
 
+首次运行前，如果 `dist/server/index.js` 不存在，请先构建：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run build
+```
+
+然后启动：
+
 ```bash
 启动本地工作台.cmd
 ```

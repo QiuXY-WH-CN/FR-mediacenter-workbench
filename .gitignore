@@ -6,6 +6,9 @@ node_modules/
 .local/
 *.log
 
+# Built web server bundle (contains embedded SOP docs; build locally)
+web/dist/
+
 # Deprecated old files
 _deprecated/
 
