@@ -6,10 +6,13 @@
 
 ```text
 miniprogram/
-├── miniprogram/                     小程序前端源码
-├── cloudfunctions/workbenchGateway/ 云函数
-├── project.config.json
-└── uploadCloudFunction.sh
+├── app.js / app.json / app.wxss      小程序入口与全局配置
+├── pages/                            页面（auth 为登录页）
+├── services/                         工作台接口封装
+├── utils/                            页面公共逻辑
+├── cloudfunctions/workbenchGateway/  云函数转发
+├── project.config.json               微信开发者工具项目配置
+└── uploadCloudFunction.sh            云函数上传脚本
 ```
 
 ## 本地运行

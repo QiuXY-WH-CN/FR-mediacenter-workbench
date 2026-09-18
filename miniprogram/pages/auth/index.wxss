@@ -1,0 +1,16 @@
+.auth-page { padding: 60rpx 40rpx calc(60rpx + env(safe-area-inset-bottom)); }
+.auth-brand { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 48rpx; }
+.auth-brand .mark { width: 140rpx; height: 150rpx; }
+.auth-title { font-size: 56rpx; font-weight: 700; line-height: 1.25; margin: 24rpx 0 16rpx; }
+.auth-sub { font-size: 28rpx; color: #777067; }
+.auth-features { margin-top: 20rpx; font-size: 24rpx; color: #ad4f0b; letter-spacing: 2rpx; }
+.auth-card { border: 1rpx solid #ebe6df; border-radius: 24rpx; padding: 36rpx 32rpx; background: #fff; box-shadow: 0 10rpx 40rpx rgba(90, 60, 20, 0.06); }
+.auth-card .title { font-size: 44rpx; margin-top: 6rpx; }
+.auth-card .sub { font-size: 26rpx; color: #777067; margin: 10rpx 0 26rpx; }
+.pending-box { padding: 8rpx 0 20rpx; }
+.pending-note { margin: 20rpx 0 8rpx; }
+.submit { margin-top: 28rpx; width: 100%; }
+.auth-switch { margin-top: 24rpx; display: flex; flex-direction: column; gap: 4rpx; }
+.text-btn { background: none; border: 0; color: #b04b05; padding: 16rpx 8rpx; font-size: 28rpx; text-align: left; }
+.auth-note { margin-top: 24rpx; font-size: 24rpx; color: #9a9188; }
+.auth-foot { text-align: center; margin-top: 30rpx; }

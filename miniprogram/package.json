@@ -1,1 +1,0 @@
-{"name":"fengru-wechat-native","private":true,"type":"commonjs","scripts":{"prepare":"node scripts/prepare.mjs","test":"node scripts/test-native.mjs"}}

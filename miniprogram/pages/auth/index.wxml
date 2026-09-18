@@ -1,54 +1,84 @@
-<view class="page">
-  <view class="brand"><image class="logo" src="/images/emblem.png" mode="aspectFit"/>冯如学媒</view>
-  <view class="eyebrow">FENGRU MEDIA</view>
-  <view class="title">{{pending ? '等待开通' : (mode === 'register' ? '申请加入' : (mode === 'recover' ? '重设密码' : '欢迎回来'))}}</view>
-  <view class="muted">与网页共用账号，日程与任务在同一处同步。</view>
-  <view wx:if="error" class="error">{{error}}</view>
-
-  <view wx:if="pending" class="card">
-    <view>{{pendingName}}，账号暂未开通，请联系管理员处理。</view>
-    <view class="actions">
-      <button bindtap="check">刷新状态</button>
-      <button bindtap="logout">退出账号</button>
-    </view>
+<view class="page auth-page">
+  <view class="brand auth-brand">
+    <image class="mark" src="/images/emblem.png" mode="aspectFit"/>
+    <view class="auth-title">冯如学媒<br/>协作工作台</view>
+    <view class="auth-sub">让每一项任务，有人接、有进度、有交付。</view>
+    <view class="auth-features">任务协作　/　成果交付　/　部门管理</view>
   </view>
 
-  <block wx:else>
-    <view wx:if="mode !== 'recover'" class="field">
-      <text class="label">用户名</text>
-      <input value="{{username}}" data-key="username" bindinput="input" maxlength="32" placeholder="与网页账号一致"/>
-    </view>
+  <view class="auth-card">
+    <view class="eyebrow">FENGRU · MEDIA CENTER</view>
+    <view wx:if="{{!pending}}" class="title">{{title}}</view>
+    <view wx:if="{{!pending}}" class="sub">{{subtitle}}</view>
 
-    <block wx:if="mode === 'register'">
-      <view class="field"><text class="label">姓名</text><input value="{{name}}" data-key="name" bindinput="input" maxlength="30"/></view>
-      <view class="field"><text class="label">部门</text><picker range="{{depts}}" value="{{deptIndex}}" bindchange="dept"><view class="picker">{{depts[deptIndex]}}</view></picker></view>
-      <view class="field"><text class="label">邀请码（可选）</text><input value="{{invite}}" data-key="invite" bindinput="input" maxlength="128"/></view>
+    <view wx:if="{{loading}}" class="hint">正在连接工作台…</view>
+
+    <block wx:elif="{{pending}}">
+      <view class="pending-box">
+        <view class="h2">{{disabled ? '账号已停用' : '申请已提交'}}</view>
+        <view class="muted">{{pendingName}} · {{pendingDept}}</view>
+        <view class="sub pending-note">{{disabled ? '请联系负责人确认账号权限。' : '请等待负责人审核，开通后即可进入工作台。'}}</view>
+      </view>
+      <view class="actions">
+        <button class="secondary" loading="{{busy}}" disabled="{{busy}}" bindtap="check">刷新审核状态</button>
+        <button disabled="{{busy}}" bindtap="logout">退出登录</button>
+      </view>
     </block>
 
-    <view wx:if="mode === 'recover'" class="field">
-      <text class="label">负责人提供的重置码</text>
-      <input value="{{resetToken}}" data-key="resetToken" bindinput="input"/>
-    </view>
+    <block wx:else>
+      <view wx:if="{{message}}" class="hint">{{message}}</view>
+      <view wx:if="{{error}}" class="error">{{error}}</view>
 
-    <view class="field">
-      <text class="label">密码</text>
-      <input password value="{{password}}" data-key="password" bindinput="input" maxlength="72" placeholder="至少 10 个字符"/>
-    </view>
+      <view wx:if="{{mode !== 'reset'}}" class="field">
+        <text class="label">用户名</text>
+        <input value="{{username}}" data-key="username" bindinput="input" maxlength="32" placeholder="3—32 位英文、数字或 . _ -"/>
+      </view>
 
-    <view wx:if="mode !== 'login'" class="field">
-      <text class="label">再次输入密码</text>
-      <input password value="{{confirm}}" data-key="confirm" bindinput="input" maxlength="72"/>
-    </view>
+      <block wx:if="{{mode === 'register' || mode === 'setup'}}">
+        <view class="field">
+          <text class="label">姓名</text>
+          <input value="{{name}}" data-key="name" bindinput="input" maxlength="30" placeholder="用于任务分配与署名"/>
+        </view>
+        <view class="field">
+          <text class="label">部门</text>
+          <picker range="{{depts}}" value="{{deptIndex}}" bindchange="dept">
+            <view class="picker">{{depts[deptIndex]}}</view>
+          </picker>
+        </view>
+      </block>
 
-    <button class="primary" loading="{{busy}}" disabled="{{busy}}" bindtap="submit">{{mode === 'login' ? '登录' : (mode === 'register' ? '提交申请' : '保存新密码')}}</button>
+      <view wx:if="{{mode === 'register'}}" class="field">
+        <text class="label">邀请码（可选）</text>
+        <input value="{{invite}}" data-key="invite" bindinput="input" maxlength="128" placeholder="没有邀请码也可提交申请"/>
+      </view>
 
-    <view class="actions">
-      <button wx:if="cloud" disabled="{{busy}}" bindtap="wechat">微信一键登录</button>
-      <button data-mode="{{mode === 'login' ? 'register' : 'login'}}" bindtap="mode">{{mode === 'login' ? '申请加入' : '返回登录'}}</button>
-    </view>
+      <view wx:if="{{mode === 'reset'}}" class="field">
+        <text class="label">负责人提供的重置码</text>
+        <input value="{{resetToken}}" data-key="resetToken" bindinput="input" maxlength="128" placeholder="粘贴重置链接中的重置码"/>
+      </view>
 
-    <view class="menu link" data-mode="recover" bindtap="mode">忘记密码 · 使用重置码</view>
-  </block>
+      <view class="field">
+        <text class="label">{{mode === 'reset' ? '新密码' : '密码'}}</text>
+        <input password value="{{password}}" data-key="password" bindinput="input" maxlength="72" placeholder="{{mode === 'login' ? '请输入密码' : '至少 10 个字符'}}"/>
+      </view>
 
-  <view class="menu link" bindtap="connection">连接设置 <text>›</text></view>
+      <view wx:if="{{mode !== 'login'}}" class="field">
+        <text class="label">再次输入密码</text>
+        <input password value="{{confirm}}" data-key="confirm" bindinput="input" maxlength="72" placeholder="再次输入密码"/>
+      </view>
+
+      <button class="primary submit" loading="{{busy}}" disabled="{{busy}}" bindtap="submit">{{submitText}}</button>
+
+      <view class="auth-switch">
+        <button wx:if="{{mode === 'login' || mode === 'register'}}" class="text-btn" data-mode="{{mode === 'login' ? 'register' : 'login'}}" bindtap="switchMode">{{mode === 'login' ? '还没有账号？申请加入 →' : '已有账号，返回登录 →'}}</button>
+        <button wx:if="{{mode === 'login'}}" class="text-btn" data-mode="reset" bindtap="switchMode">忘记密码 · 使用重置码</button>
+      </view>
+
+      <view class="sub auth-note">{{mode === 'login' ? '忘记密码请联系负责人获取重置链接。' : '账号密码由本人设置，请勿与他人共用。'}}</view>
+    </block>
+  </view>
+
+  <view class="auth-foot">
+    <text class="link" bindtap="connection">连接设置 ›</text>
+  </view>
 </view>
