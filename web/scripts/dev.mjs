@@ -16,6 +16,7 @@ if(!exists) for(const f of (await readdir('drizzle')).filter(f=>f.endsWith('.sql
 try{const envText=await readFile('.env','utf8');for(const line of envText.split(/\r?\n/)){const m=line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);if(m&&!process.env[m[1]])process.env[m[1]]=m[2]}}catch{}
 const bootstrapHash = process.env.BOOTSTRAP_HASH || createHash('sha256').update('local-preview-only-setup').digest('hex');
 if(!process.env.BOOTSTRAP_HASH) console.warn('[security] 使用默认本地初始化口令；公开部署请设置 BOOTSTRAP_HASH 环境变量。');
+DB.sqlite.exec('CREATE TABLE IF NOT EXISTS site_stats (date TEXT PRIMARY KEY, hits INTEGER NOT NULL)');
 const env = {DB, BOOTSTRAP_HASH: bootstrapHash};
 const mini = createMiniGateway({worker, DB});
 
@@ -29,6 +30,7 @@ const server = http.createServer(async(req,res)=>{
     const hasBody = !['GET','HEAD'].includes(req.method||'GET');
     const request = new Request(url.toString(),{method:req.method,headers:new Headers(req.headers),...(hasBody?{body:Buffer.concat(chunks)}:{})});
     const response = url.pathname === '/mini/api' ? await mini(request, env) : await worker.fetch(request, env);
+    if(url.pathname==='/' && (req.method||'GET').toUpperCase()==='GET'){const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;DB.sqlite.prepare('INSERT INTO site_stats (date,hits) VALUES (?,1) ON CONFLICT(date) DO UPDATE SET hits=hits+1').run(today)}
     const headers = Object.fromEntries(response.headers);
     if(proto==='https') headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
     res.writeHead(response.status,headers);
