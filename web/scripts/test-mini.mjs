@@ -91,8 +91,13 @@ await miniCall('wechat/bind',{},miniToken,403);
 // Health and SOP endpoints.
 const health=await miniCall('health');
 assert.equal(health.body.ok,true);
-const docs=await miniCall('sop');
+await miniCall('sop',{},'',401);
+const sopLogin=await miniCall('login',{username:'owner',password});
+const docs=await miniCall('sop',{},sopLogin.sessionToken);
 assert.ok(Array.isArray(docs.body)&&docs.body.length>0,'sop should return documents');
 
 console.log('PASS: mini gateway sessions, logout, cross-device sync, cloud WeChat identity, health and SOP.');
 DB.sqlite.close();
+
+
+

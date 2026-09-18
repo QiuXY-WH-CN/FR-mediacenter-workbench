@@ -178,8 +178,11 @@ export function createMiniGateway({ worker, DB, root = process.cwd(), bridgeConf
     if (path === 'health') return json(200, { ok: true });
 
     if (path === 'sop') {
+      const sopToken = typeof payload.token === 'string' ? payload.token : '';
+      const sopUser = userForToken(DB, sopToken);
+      if (!sopUser || sopUser.status !== 'active') return json(401, { error: '请先登录' });
       try {
-        const docs = await worker.fetch(new Request('http://mini.local/sop-docs.json'), env);
+        const docs = await worker.fetch(new Request('http://mini.local/sop-docs.json', { headers: { Cookie: `fr_session_v2=${sopToken}` } }), env);
         return json(docs.status, await docs.json());
       } catch {
         return json(502, { error: '知识库暂时不可用' });

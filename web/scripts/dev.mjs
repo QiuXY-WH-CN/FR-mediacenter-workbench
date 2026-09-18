@@ -13,7 +13,9 @@ await mkdir('.local',{recursive:true});
 const DB = database(process.env.DB_PATH || '.local/preview.db');
 const exists = DB.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
 if(!exists) for(const f of (await readdir('drizzle')).filter(f=>f.endsWith('.sql')).sort()) DB.sqlite.exec(await readFile('drizzle/'+f,'utf8'));
-const env = {DB, BOOTSTRAP_HASH: createHash('sha256').update('local-preview-only-setup').digest('hex')};
+const bootstrapHash = process.env.BOOTSTRAP_HASH || createHash('sha256').update('local-preview-only-setup').digest('hex');
+if(!process.env.BOOTSTRAP_HASH) console.warn('[security] 使用默认本地初始化口令；公开部署请设置 BOOTSTRAP_HASH 环境变量。');
+const env = {DB, BOOTSTRAP_HASH: bootstrapHash};
 const mini = createMiniGateway({worker, DB});
 
 const server = http.createServer(async(req,res)=>{
@@ -26,7 +28,9 @@ const server = http.createServer(async(req,res)=>{
     const hasBody = !['GET','HEAD'].includes(req.method||'GET');
     const request = new Request(url.toString(),{method:req.method,headers:new Headers(req.headers),...(hasBody?{body:Buffer.concat(chunks)}:{})});
     const response = url.pathname === '/mini/api' ? await mini(request, env) : await worker.fetch(request, env);
-    res.writeHead(response.status,Object.fromEntries(response.headers));
+    const headers = Object.fromEntries(response.headers);
+    if(proto==='https') headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
+    res.writeHead(response.status,headers);
     res.end(Buffer.from(await response.arrayBuffer()));
   }catch(e){
     console.error(e);
