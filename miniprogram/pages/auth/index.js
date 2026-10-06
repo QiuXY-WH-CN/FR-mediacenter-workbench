@@ -1,4 +1,5 @@
 const { api, depts } = require('../../utils/view');
+const UI=require('../../utils/interface');
 
 const COPY = {
   login: { title: '欢迎回到学媒', subtitle: '使用学媒账号登录。', submit: '登录' },
@@ -35,7 +36,7 @@ Page({
     disabled: false
   },
 
-  onLoad(options) {
+  onLoad(options) {UI.install(this);
     const app = getApp();
     const launch = (app && app.pendingAuth) || {};
     if (app) app.pendingAuth = {};

@@ -1,0 +1,10 @@
+const I=require('./localization'),api=require('../services/api');
+const language=()=>api.getState()?.settings?.language||wx.getStorageSync('fr.language')||'zh-CN';
+function translateData(value,key=''){
+ if(typeof value==='string')return /^(label|title|subtitle|submitText|placeholder|display|statusLabel|roleLabel|role|syncError|error|templateHint|tokenLabel)$/.test(key)?I.translate(value,language()):value;
+ if(Array.isArray(value))return value.map(v=>translateData(v,key));
+ if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,translateData(v,k)]));return value;
+}
+function install(page){if(page.interfaceInstalled)return;page.interfaceInstalled=true;const original=page.setData.bind(page);page.setData=function(data,callback){const lang=language(),labels=page.interfaceLanguage===lang?{}:{ui:I.ui(lang),language:lang},depts=data.depts||page.data.depts;if(depts)labels.deptLabels=depts.map(v=>I.translate(v,lang));page.interfaceLanguage=lang;original({...translateData(data),...labels},callback)};page.setData(page.data);}
+function navigation(page,s){const lang=s.settings?.language||'zh-CN';wx.setStorageSync('fr.language',lang);const dark=s.dark,bg=dark?'#101010':'#ffffff',titles={home:'工作概览',tasks:'我的任务',events:'所有任务',calendar:'日历安排',members:'成员与权限',templates:'流程模板',sop:'知识库',profile:'个人中心',rewards:'成果与贡献',editor:'设置',task:'任务',event:'活动'};const name=page.route?.split('/')[1];if(titles[name])wx.setNavigationBarTitle?.({title:I.translate(titles[name],lang)});wx.setNavigationBarColor?.({frontColor:dark?'#ffffff':'#000000',backgroundColor:bg});wx.setBackgroundColor?.({backgroundColor:bg});wx.setTabBarStyle?.({backgroundColor:bg,color:dark?'#b5b5b5':'#707070',selectedColor:s.settings?.themeColor||'#e77b24',borderStyle:dark?'black':'white'});['工作台','任务','日历','我的'].forEach((text,index)=>wx.setTabBarItem?.({index,text:I.translate(text,lang)}));}
+module.exports={install,navigation,language,translateData,t:s=>I.translate(s,language())};

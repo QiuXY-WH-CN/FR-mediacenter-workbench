@@ -1,9 +1,9 @@
 <view class="page auth-page"><view wx:if="{{ambientDots.length}}" class="ambient-particles {{particleStyle}}"><view wx:for="{{ambientDots}}" wx:key="id" class="ambient-dot" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.delay}}s;"/></view>
   <view class="brand auth-brand">
     <image class="mark" src="/images/emblem.png" mode="aspectFit"/>
-    <view class="auth-title">冯如学媒<br/>协作工作台</view>
-    <view class="auth-sub">让每一项任务，有人接、有进度、有交付。</view>
-    <view class="auth-features">任务协作　/　成果交付　/　部门管理</view>
+    <view class="auth-title">{{ui.s14}}<br/>{{ui.s15}}</view>
+    <view class="auth-sub">{{ui.s313}}</view>
+    <view class="auth-features">{{ui.s314}}</view>
   </view>
 
   <view class="auth-card">
@@ -11,17 +11,17 @@
     <view wx:if="{{!pending}}" class="title">{{title}}</view>
     <view wx:if="{{!pending}}" class="sub">{{subtitle}}</view>
 
-    <view wx:if="{{loading}}" class="hint">正在连接工作台…</view>
+    <view wx:if="{{loading}}" class="hint">{{ui.s315}}</view>
 
     <block wx:elif="{{pending}}">
       <view class="pending-box">
-        <view class="h2">{{disabled ? '账号已停用' : '申请已提交'}}</view>
+        <view class="h2">{{disabled ? '账号已停用' : ui.s293}}</view>
         <view class="muted">{{pendingName}} · {{pendingDept}}</view>
         <view class="sub pending-note">{{disabled ? '请联系负责人确认账号权限。' : '请等待负责人审核，开通后即可进入工作台。'}}</view>
       </view>
       <view class="actions">
-        <button class="secondary" loading="{{busy}}" disabled="{{busy}}" bindtap="check">刷新审核状态</button>
-        <button disabled="{{busy}}" bindtap="logout">退出登录</button>
+        <button class="secondary" loading="{{busy}}" disabled="{{busy}}" bindtap="check">{{ui.s316}}</button>
+        <button disabled="{{busy}}" bindtap="logout">{{ui.s46}}</button>
       </view>
     </block>
 
@@ -30,55 +30,55 @@
       <view wx:if="{{error}}" class="error">{{error}}</view>
 
       <view wx:if="{{mode !== 'reset'}}" class="field">
-        <text class="label">用户名</text>
+        <text class="label">{{ui.s37}}</text>
         <input value="{{username}}" data-key="username" bindinput="input" maxlength="32" placeholder="3—32 位英文、数字或 . _ -"/>
       </view>
 
       <block wx:if="{{mode === 'register' || mode === 'setup'}}">
         <view class="field">
-          <text class="label">姓名</text>
+          <text class="label">{{ui.s35}}</text>
           <input value="{{name}}" data-key="name" bindinput="input" maxlength="30" placeholder="用于任务分配与署名"/>
         </view>
         <view class="field">
-          <text class="label">部门</text>
-          <picker range="{{depts}}" value="{{deptIndex}}" bindchange="dept">
-            <view class="picker">{{depts[deptIndex]}}</view>
+          <text class="label">{{ui.s23}}</text>
+          <picker range="{{deptLabels}}" value="{{deptIndex}}" bindchange="dept">
+            <view class="picker">{{deptLabels[deptIndex]}}</view>
           </picker>
         </view>
       </block>
 
       <view wx:if="{{mode === 'register'}}" class="field">
-        <text class="label">邀请码（可选）</text>
+        <text class="label">{{ui.s297}}</text>
         <input value="{{invite}}" data-key="invite" bindinput="input" maxlength="128" placeholder="没有邀请码也可提交申请"/>
       </view>
 
       <view wx:if="{{mode === 'reset'}}" class="field">
-        <text class="label">负责人提供的重置码</text>
+        <text class="label">{{ui.s317}}</text>
         <input value="{{resetToken}}" data-key="resetToken" bindinput="input" maxlength="128" placeholder="粘贴重置链接中的重置码"/>
       </view>
 
       <view class="field">
-        <text class="label">{{mode === 'reset' ? '新密码' : '密码'}}</text>
+        <text class="label">{{mode === 'reset' ? ui.s41 : ui.s39}}</text>
         <input password value="{{password}}" data-key="password" bindinput="input" maxlength="72" placeholder="{{mode === 'login' ? '请输入密码' : '至少 10 个字符'}}"/>
       </view>
 
       <view wx:if="{{mode !== 'login'}}" class="field">
-        <text class="label">再次输入密码</text>
-        <input password value="{{confirm}}" data-key="confirm" bindinput="input" maxlength="72" placeholder="再次输入密码"/>
+        <text class="label">{{ui.s298}}</text>
+        <input password value="{{confirm}}" data-key="confirm" bindinput="input" maxlength="72" placeholder="{{ui.s298}}"/>
       </view>
 
       <button class="primary submit" loading="{{busy}}" disabled="{{busy}}" bindtap="submit">{{submitText}}</button>
 
       <view class="auth-switch">
-        <button wx:if="{{mode === 'login' || mode === 'register'}}" class="text-btn" data-mode="{{mode === 'login' ? 'register' : 'login'}}" bindtap="switchMode">{{mode === 'login' ? '还没有账号？申请加入 →' : '已有账号，返回登录 →'}}</button>
-        <button wx:if="{{mode === 'login'}}" class="text-btn" data-mode="reset" bindtap="switchMode">忘记密码 · 使用重置码</button>
+        <button wx:if="{{mode === 'login' || mode === 'register'}}" class="text-btn" data-mode="{{mode === 'login' ? 'register' : 'login'}}" bindtap="switchMode">{{mode === 'login' ? ui.s295 : ui.s296}}</button>
+        <button wx:if="{{mode === 'login'}}" class="text-btn" data-mode="reset" bindtap="switchMode">{{ui.s318}}</button>
       </view>
 
-      <view class="sub auth-note">{{mode === 'login' ? '忘记密码请联系负责人获取重置链接。' : '账号密码由本人设置，请勿与他人共用。'}}</view>
+      <view class="sub auth-note">{{mode === 'login' ? ui.s294 : ui.s299}}</view>
     </block>
   </view>
 
   <view class="auth-foot">
-    <text class="link" bindtap="connection">连接设置 ›</text>
+    <text class="link" bindtap="connection">{{ui.s392}}</text>
   </view>
 </view>

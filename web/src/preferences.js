@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-export const defaults={workspace:'',themeColor:'#e77b24',appearance:'light',particles:'constellation',particleDensity:32,rotationMinutes:5,motion:true,compact:false};
+export const defaults={workspace:'',themeColor:'#e77b24',appearance:'light',particles:'constellation',particleDensity:48,rotationMinutes:5,motion:true,respectSystemMotion:false,compact:false,language:'zh-CN'};
 export async function ensurePreferences(db){
  await db.prepare("CREATE TABLE IF NOT EXISTS member_preferences (user TEXT PRIMARY KEY,data TEXT NOT NULL)").run();
  await db.prepare("CREATE TABLE IF NOT EXISTS account_requests (user TEXT PRIMARY KEY,reason TEXT NOT NULL,status TEXT NOT NULL,requested INTEGER NOT NULL,revision INTEGER NOT NULL,review_note TEXT NOT NULL DEFAULT '')").run();
@@ -9,6 +9,7 @@ export async function preferenceRoutes(path,b,u,db,{fail,text,departments}){
  if(path==='/api/settings/save'){
   const old=await readPreferences(db,u),next={...old,...b};
   if(!departments.includes(next.workspace)&&next.workspace!=='')fail(400,'请选择有效的部门模式');
+  if(!['zh-CN','en'].includes(next.language)||typeof next.respectSystemMotion!=='boolean')fail(400,'语言或动态偏好无效');
   if(!/^#[a-fA-F0-9]{6}$/.test(next.themeColor)||!['light','dark','auto'].includes(next.appearance)||!['off','constellation','fireflies','snow','petals','rain','orbits','stars','bubbles','random','rotate'].includes(next.particles))fail(400,'外观设置无效');
   if(!Number.isInteger(next.particleDensity)||next.particleDensity<10||next.particleDensity>80||!Number.isInteger(next.rotationMinutes)||next.rotationMinutes<1||next.rotationMinutes>60||typeof next.motion!=='boolean'||typeof next.compact!=='boolean')fail(400,'动画设置无效');
   const data=Object.fromEntries(Object.keys(defaults).map(k=>[k,next[k]]));

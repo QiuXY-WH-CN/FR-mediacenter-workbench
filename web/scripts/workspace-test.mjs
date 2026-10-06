@@ -20,6 +20,8 @@ await call('settings/save',{workspace:'办公室',themeColor:'#168875',particles
 s=(await call('state',null,owner.cookie)).body;assert.equal(s.settings.themeColor,'#168875');assert.equal(s.tasks.find(t=>t.id===task).priority,'urgent');assert.equal(s.events[0].department,'办公室');
 await call('settings/save',{workspace:'创意设计部'},owner.cookie);s=(await call('state',null,owner.cookie)).body;assert.equal(s.tasks.length,0);assert.equal(s.events.length,0);
 await call('settings/save',{workspace:''},owner.cookie);
+await call('settings/save',{language:'en',respectSystemMotion:true},owner.cookie);s=(await call('state',null,owner.cookie)).body;assert.equal(s.settings.language,'en');assert.equal(s.settings.respectSystemMotion,true);
+await call('settings/save',{language:'invalid'},owner.cookie,400);await call('settings/save',{respectSystemMotion:'true'},owner.cookie,400);
 await call('settings/save',{themeColor:'invalid'},owner.cookie,400);await call('settings/save',{particleDensity:100},owner.cookie,400);
 await call('events/create',{name:'越权',date:'2026-10-09',department:'创意设计部',template:'blank'},member.cookie,403);
 await call('account/request',{password,reason:'工作交接完成'},member.cookie);const closures=(await call('members',null,owner.cookie)).body.closures;assert.equal(closures.length,1);

@@ -97,3 +97,7 @@ dist/      已构建服务
 新增部门模式、账号设置、优先级和气泡成员图。运行 npm run test:workspace 验证部门隔离、排序、设置与注销流程。浏览器新增交互验证使用 npm run test:workspace:browser，需要 PLAYWRIGHT_MODULE 指向本机 Playwright。
 
 Windows 启动建议使用根目录 启动全部云服务.cmd；不依赖额外 EXE。
+
+## v1.0.2
+
+左下角个人中心提供通用、外观、账号设置。粒子图层位于内容上层并允许关闭；轮换间隔只在定时轮换时出现。通用可切换中文/英语；任务内容、姓名与知识库正文保留原文。新增动效验证：npm run test:motion:browser。
