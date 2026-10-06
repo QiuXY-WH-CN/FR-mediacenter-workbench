@@ -1,4 +1,4 @@
-<view class="page auth-page">
+<view class="page auth-page"><view wx:if="{{ambientDots.length}}" class="ambient-particles {{particleStyle}}"><view wx:for="{{ambientDots}}" wx:key="id" class="ambient-dot" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.delay}}s;"/></view>
   <view class="brand auth-brand">
     <image class="mark" src="/images/emblem.png" mode="aspectFit"/>
     <view class="auth-title">冯如学媒<br/>协作工作台</view>

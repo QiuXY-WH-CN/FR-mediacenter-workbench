@@ -8,7 +8,7 @@ const POST_PATHS = new Set([
   'setup', 'login', 'register', 'recover', 'logout', 'password',
   'events/create', 'events/update', 'events/reschedule',
   'tasks/create', 'tasks/action', 'templates/save',
-  'members/update', 'invite', 'reset-link', 'profile/request', 'profile/review'
+  'members/update', 'invite', 'reset-link', 'profile/request', 'profile/review', 'settings/save', 'account/request', 'account/cancel', 'account/review'
 ]);
 const WECHAT_PATHS = new Set(['wechat/login', 'wechat/bind', 'wechat/unbind', 'wechat/status']);
 const ALLOWED = new Set([...GET_PATHS, ...POST_PATHS, ...WECHAT_PATHS, 'sop', 'health']);

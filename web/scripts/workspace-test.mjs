@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {readFile,readdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
+import worker from '../dist/server/index.js';
+import {database} from './local-db.mjs';
+const M=createRequire(import.meta.url)('../../miniprogram/utils/task-model.js');
+assert.deepEqual([{name:'done',status:'done',due:'2026-01-01'},{name:'later urgent',priority:'urgent',due:'2026-10-10T18:00'},{name:'earlier',due:'2026-10-09T18:00'},{name:'later high',priority:'high',due:'2026-10-10T18:00'}].sort(M.compare).map(t=>t.name),['earlier','later urgent','later high','done']);
+const DB=database();for(const f of(await readdir('drizzle')).filter(f=>f.endsWith('.sql')))DB.sqlite.exec(await readFile('drizzle/'+f,'utf8'));
+const env={DB,BOOTSTRAP_HASH:createHash('sha256').update('workspace-test').digest('hex')},origin='https://local.test',password='Testing-password-47-strong';let ip=0;
+async function call(path,data,cookie='',expected=200){const r=await worker.fetch(new Request(origin+'/api/'+path,{method:data?'POST':'GET',headers:{Origin:origin,'X-FR-Request':'1','Content-Type':'application/json',Cookie:cookie,'CF-Connecting-IP':'127.0.0.'+(++ip)},body:data?JSON.stringify(data):undefined}),env);const b=await r.json();assert.equal(r.status,expected,JSON.stringify(b));return {body:b,cookie:r.headers.get('set-cookie')?.split(';')[0]||cookie}}
+const owner=await call('setup',{token:'workspace-test',username:'owner',name:'测试负责人',dept:'办公室',password});
+const invitation=(await call('invite',{dept:'办公室',role:'member'},owner.cookie)).body.token;
+const member=await call('register',{username:'partner',name:'测试伙伴',dept:'办公室',password,invite:invitation});
+let s=(await call('state',null,owner.cookie)).body;const uid=s.user.id;
+const event=(await call('events/create',{name:'办公室内部排期',date:'2026-10-09',department:'办公室',priority:'high',template:'blank'},owner.cookie)).body.id;
+const task=(await call('tasks/create',{event,name:'内部任务',owner:uid,receiver:uid,due:'2026-10-09T18:00',requirements:'验收材料',priority:'urgent'},owner.cookie)).body.id;
+await call('tasks/create',{event,name:'错误优先级',owner:uid,receiver:uid,due:'2026-10-09T18:00',requirements:'验收材料',priority:'invalid'},owner.cookie,400);
+await call('settings/save',{workspace:'办公室',themeColor:'#168875',particles:'rotate',rotationMinutes:2},owner.cookie);
+s=(await call('state',null,owner.cookie)).body;assert.equal(s.settings.themeColor,'#168875');assert.equal(s.tasks.find(t=>t.id===task).priority,'urgent');assert.equal(s.events[0].department,'办公室');
+await call('settings/save',{workspace:'创意设计部'},owner.cookie);s=(await call('state',null,owner.cookie)).body;assert.equal(s.tasks.length,0);assert.equal(s.events.length,0);
+await call('settings/save',{workspace:''},owner.cookie);
+await call('settings/save',{themeColor:'invalid'},owner.cookie,400);await call('settings/save',{particleDensity:100},owner.cookie,400);
+await call('events/create',{name:'越权',date:'2026-10-09',department:'创意设计部',template:'blank'},member.cookie,403);
+await call('account/request',{password,reason:'工作交接完成'},member.cookie);const closures=(await call('members',null,owner.cookie)).body.closures;assert.equal(closures.length,1);
+await call('account/cancel',{},member.cookie);assert.equal((await call('members',null,owner.cookie)).body.closures.length,0);
+await call('account/request',{password,reason:'工作交接完成'},member.cookie);const closure=(await call('members',null,owner.cookie)).body.closures[0];await call('account/review',{id:closure.user,revision:closure.revision,action:'approve'},owner.cookie);await call('state',null,member.cookie,401);
+console.log('PASS: deadline-first priority sorting, department scope, preference persistence and validation, account closure review and session revocation.');DB.sqlite.close();

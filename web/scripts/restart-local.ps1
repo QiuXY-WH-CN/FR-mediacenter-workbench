@@ -3,6 +3,8 @@ $webRoot = Split-Path -Parent $PSScriptRoot
 $nodeCommand = (Get-Command node.exe).Source
 Push-Location $webRoot
 try {
+    & $nodeCommand scripts/build.mjs
+    if ($LASTEXITCODE -ne 0) { throw 'Build failed; current server retained.' }
     & $nodeCommand scripts/backup.mjs
     if ($LASTEXITCODE -ne 0) { throw 'Database backup failed; server was not restarted.' }
     $listeners = Get-NetTCPConnection -LocalPort 8766 -State Listen -ErrorAction SilentlyContinue

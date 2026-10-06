@@ -16,3 +16,6 @@ _deprecated/
 Thumbs.db
 .DS_Store
 .vscode/
+
+# Cloudflare named tunnel (machine-specific)
+web/cloudflared-config.yml

@@ -14,7 +14,8 @@
     "pages/rewards/index",
     "pages/members/index",
     "pages/sop/index",
-    "pages/connection/index"
+    "pages/connection/index",
+    "pages/profile/preferences"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",
@@ -52,5 +53,3 @@
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }
-
-

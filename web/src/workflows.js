@@ -30,6 +30,7 @@ export async function workflows(path,b,u,db,h) {
   const {fail,text,date,shift,shared,log,canManageEvent,manager}=h;
   const optional=(v,max=3000)=>v==null||v===''?'':text(v,max);
   const url=v=>{v=optional(v,2000);if(v){let p;try{p=new URL(v)}catch{fail(400,'链接格式不正确')}if(!['https:','http:'].includes(p.protocol)||p.username||p.password)fail(400,'请填写 http 或 https 链接')}return v};
+  const priority=v=>{v=v||'normal';if(!['low','normal','high','urgent'].includes(v))fail(400,'任务优先级无效');return v};
   const points=v=>{const n=Number(v||0);if(!Number.isSafeInteger(n)||n<0||n>10000)fail(400,'积分须为 0—10000 的整数');return n};
   const fields=(x,old={})=>{
     const d=date(x.date??old.date),allDay=x.allDay??old.allDay??true;
@@ -38,7 +39,7 @@ export async function workflows(path,b,u,db,h) {
     if(!allDay&&(!/^([01]\d|2[0-3]):[0-5]\d$/.test(start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(end)))fail(400,'请填写有效时间');
     if(endDate<d||(!allDay&&endDate===d&&end<=start))fail(400,'结束时间必须晚于开始时间');
     const source=x.source??old.source??'学媒自有';if(!['学媒自有','外派需求'].includes(source))fail(400,'需求来源无效');
-    return {name:text(x.name??old.name,60),date:d,endDate,allDay,startTime:start,endTime:end,location:optional(x.location??old.location,100),description:optional(x.description??old.description),source,requester:optional(x.requester??old.requester,100),cloudUrl:url(x.cloudUrl??old.cloudUrl),rewardPoints:points(x.rewardPoints??old.rewardPoints),rewardNote:optional(x.rewardNote??old.rewardNote,500)};
+    const department=x.department??old.department??'';if(department&&!departments.includes(department))fail(400,'部门模式无效');if(department&&u.role!=='admin'&&department!==u.dept)fail(403,'只能创建本部门内部日程');return {department,priority:priority(x.priority??old.priority),name:text(x.name??old.name,60),date:d,endDate,allDay,startTime:start,endTime:end,location:optional(x.location??old.location,100),description:optional(x.description??old.description),source,requester:optional(x.requester??old.requester,100),cloudUrl:url(x.cloudUrl??old.cloudUrl),rewardPoints:points(x.rewardPoints??old.rewardPoints),rewardNote:optional(x.rewardNote??old.rewardNote,500)};
   };
   const normalizeSteps=input=>{
     if(!Array.isArray(input)||input.length>30)fail(400,'模板最多包含 30 个环节');
@@ -46,7 +47,7 @@ export async function workflows(path,b,u,db,h) {
       const offset=Number(x.offset||0);if(!Number.isInteger(offset)||Math.abs(offset)>365||!departments.includes(x.dept))fail(400,'请检查环节的部门与相对天数');
       if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(x.time||''))fail(400,'环节时间无效');
       const depends=x.depends||[];if(!Array.isArray(depends)||depends.some(j=>!Number.isInteger(j)||j<0||j>=i)||new Set(depends).size!==depends.length)fail(400,'依赖只能选择前面的环节');
-      return {name:text(x.name,100),dept:x.dept,offset,time:x.time,depends,requirements:text(x.requirements,3000),rewardPoints:x.rewardPoints==null?null:points(x.rewardPoints),rewardNote:optional(x.rewardNote,500)};
+      return {name:text(x.name,100),dept:x.dept,offset,time:x.time,depends,requirements:text(x.requirements,3000),priority:priority(x.priority),rewardPoints:x.rewardPoints==null?null:points(x.rewardPoints),rewardNote:optional(x.rewardNote,500)};
     });
   };
   if(path==='/api/templates/save'){
@@ -68,27 +69,27 @@ export async function workflows(path,b,u,db,h) {
         const selected=b.assignments?.[i];
         const owner=people.find(p=>p.id===(selected?.owner||legacy));
         const receiver=people.find(p=>p.id===(selected?.receiver||(!b.assignments&&templateId==='ceremony'&&i===2?b.editor:u.id)));
-        if(!owner||!receiver)fail(400,'请为每个环节选择已开通的负责人和验收人');return {owner,receiver};
+        if(!owner||!receiver)fail(400,'请为每个环节选择已开通的负责人和验收人');if(f.department&&(owner.dept!==f.department||receiver.dept!==f.department))fail(400,'部门内部流程只能选择本部门负责人和验收人');return {owner,receiver};
       });
       s.events.unshift({id,...f,type:template?.name||'自由活动',template:templateId,createdBy:u.id});
-      steps.forEach((x,i)=>{const {owner,receiver}=assignments[i];s.tasks.push({id:id+'-'+i,event:id,name:x.name,owner:owner.id,dept:owner.dept,receiver:receiver.id,due:shift(f.date,x.offset)+'T'+x.time,status:x.depends.length?'blocked':'pending',depends:x.depends.map(j=>id+'-'+j),requirements:x.requirements,checks:[...standardChecks],checked:[false,false],rewardPoints:x.rewardPoints??f.rewardPoints,rewardNote:x.rewardNote||f.rewardNote});});
+      steps.forEach((x,i)=>{const {owner,receiver}=assignments[i];s.tasks.push({id:id+'-'+i,event:id,priority:x.priority||f.priority,name:x.name,owner:owner.id,dept:owner.dept,receiver:receiver.id,due:shift(f.date,x.offset)+'T'+x.time,status:x.depends.length?'blocked':'pending',depends:x.depends.map(j=>id+'-'+j),requirements:x.requirements,checks:[...standardChecks],checked:[false,false],rewardPoints:x.rewardPoints??f.rewardPoints,rewardNote:x.rewardNote||f.rewardNote});});
       log(s,`已创建「${f.name}」及 ${steps.length} 项任务`);return {ok:true,id};
     });
   }
   if(path==='/api/events/update')return shared(db,s=>{
     const e=s.events.find(x=>x.id===b.id);if(!e||!canManageEvent(u,e))fail(403,'无权修改此活动');
-    const f=fields(b,e);if(f.source==='外派需求'&&u.role!=='admin'&&u.dept!=='办公室')fail(403,'外派需求请由办公室登记派单');
+    const f=fields(b,e);if(f.department!==(e.department||'')&&s.tasks.some(t=>t.event===e.id))fail(400,'已有任务的活动不能修改所属部门，请新建内部日程');if(f.source==='外派需求'&&u.role!=='admin'&&u.dept!=='办公室')fail(403,'外派需求请由办公室登记派单');
     const delta=Math.round((Date.parse(f.date)-Date.parse(e.date))/DAY);
     if(delta)s.tasks.filter(t=>t.event===e.id&&t.status!=='done').forEach(t=>{t.due=shift(t.due,delta)});
     Object.assign(e,f);log(s,`已更新「${e.name}」的活动信息`, 'all');return {ok:true};
   });
   if(path==='/api/tasks/create'){
     const p=await db.prepare("SELECT id,dept FROM users WHERE id=? AND status='active'").bind(text(b.owner)).first();
-    const r=await db.prepare("SELECT id FROM users WHERE id=? AND status='active'").bind(text(b.receiver)).first();
+    const r=await db.prepare("SELECT id,dept FROM users WHERE id=? AND status='active'").bind(text(b.receiver)).first();
     if(!p||!r)fail(400,'请选择已开通成员');
     return shared(db,s=>{const e=s.events.find(x=>x.id===b.event);if(!e||!canManageEvent(u,e))fail(403,'无权添加任务');
-      const depends=b.depends||[];if(!Array.isArray(depends)||new Set(depends).size!==depends.length||depends.some(id=>!s.tasks.some(t=>t.id===id&&t.event===e.id)))fail(400,'前序任务无效');
-      const id=crypto.randomUUID();s.tasks.push({id,event:e.id,name:text(b.name,100),owner:p.id,dept:p.dept,receiver:r.id,due:date(b.due,true),depends,status:depends.some(id=>s.tasks.find(t=>t.id===id).status!=='done')?'blocked':'pending',requirements:text(b.requirements,3000),checks:[...standardChecks],checked:[false,false],rewardPoints:points(b.rewardPoints??e.rewardPoints),rewardNote:optional(b.rewardNote??e.rewardNote,500)});
+      if(e.department&&(p.dept!==e.department||r.dept!==e.department))fail(400,'部门内部任务只能分配给本部门成员');const depends=b.depends||[];if(!Array.isArray(depends)||new Set(depends).size!==depends.length||depends.some(id=>!s.tasks.some(t=>t.id===id&&t.event===e.id)))fail(400,'前序任务无效');
+      const id=crypto.randomUUID();s.tasks.push({id,event:e.id,priority:priority(b.priority),name:text(b.name,100),owner:p.id,dept:p.dept,receiver:r.id,due:date(b.due,true),depends,status:depends.some(id=>s.tasks.find(t=>t.id===id).status!=='done')?'blocked':'pending',requirements:text(b.requirements,3000),checks:[...standardChecks],checked:[false,false],rewardPoints:points(b.rewardPoints??e.rewardPoints),rewardNote:optional(b.rewardNote??e.rewardNote,500)});
       log(s,`新任务「${b.name}」已分配`,p.id);return {ok:true,id};});
   }
   return null;
