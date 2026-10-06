@@ -1,0 +1,6 @@
+<view wx:if="{{sharePreview}}" class="share-public-preview">
+ <image class="share-public-emblem" src="/images/emblem.png" mode="aspectFit"/>
+ <view class="title">{{sharePublicTitle}}</view>
+ <view class="muted">{{sharePublicDescription}}</view>
+ <view class="share-public-note">{{sharePublicNote}}</view>
+</view>

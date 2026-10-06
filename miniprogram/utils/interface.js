@@ -1,7 +1,7 @@
 const I=require('./localization'),api=require('../services/api');
 const language=()=>api.getState()?.settings?.language||wx.getStorageSync('fr.language')||'zh-CN';
 function translateData(value,key=''){
- if(typeof value==='string')return /^(label|title|subtitle|submitText|placeholder|display|statusLabel|roleLabel|role|syncError|error|templateHint|tokenLabel)$/.test(key)?I.translate(value,language()):value;
+ if(typeof value==='string')return /^(label|title|subtitle|submitText|placeholder|display|priorityLabel|statusLabel|roleLabel|role|syncError|error|templateHint|tokenLabel)$/.test(key)?I.translate(value,language()):value;
  if(Array.isArray(value))return value.map(v=>translateData(v,key));
  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,translateData(v,k)]));return value;
 }

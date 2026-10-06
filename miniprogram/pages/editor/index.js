@@ -1,7 +1,7 @@
 const V=require('../../utils/view'),O=require('../../utils/organization');
 const F=(key,label,value='',type='text',options=[])=>({key,label,value:value??'',type,options:options.map(o=>typeof o==='string'?{label:o,value:o}:o)});
 const fieldList=items=>items.map(f=>{if(f.type==='select'&&f.options.some(o=>o.dept)){f.type='person';f.groups=O.groups(f.options);f.display=f.options.find(o=>o.value===f.value)?.label||'请选择';f.open=false}if(f.type==='select'){f.selected=Math.max(0,f.options.findIndex(o=>o.value===f.value));f.value=f.options[f.selected]?.value||'';f.display=f.options[f.selected]?.label||'请选择'}return f});
-Page(V.page({data:{fields:[],title:'编辑',busy:false,resultToken:'',stepCount:0},renderState(s){this.snapshot=s;if(!this.initialized){this.initialized=true;this.initialize()}},
+Page(V.page({data:{fields:[],title:'编辑',busy:false,resultToken:'',stepCount:0},renderState(s){this.setData({shareLabel:s.settings?.language==='en'?'Share mini program':'分享小程序'});this.snapshot=s;if(!this.initialized){this.initialized=true;this.initialize()}},
  initialize(){const o=this.options,s=this.snapshot,u=s.user,e=s.events.find(x=>x.id===o.id||x.id===o.event),t=s.tasks.find(x=>x.id===o.id);let fields=[],title='编辑';this.initialValues={};
   const eventDept=e?.department||s.settings?.workspace;const people=s.people.filter(p=>!eventDept||p.dept===eventDept).map(p=>({value:p.id,label:p.name,dept:p.dept}));
   const rewards=x=>[F('priority','任务优先级',x?.priority||'normal','select',[{value:'low',label:'低'},{value:'normal',label:'普通'},{value:'high',label:'高'},{value:'urgent',label:'紧急'}]),F('rewardPoints','每项任务积分',x?.rewardPoints||0,'number'),F('rewardNote','其他奖励备注',x?.rewardNote||'')];
@@ -42,6 +42,5 @@ Page(V.page({data:{fields:[],title:'编辑',busy:false,resultToken:'',stepCount:
    if(path==='invite'){this.setData({resultToken:result.token,tokenLabel:'邀请码（7 天内一次有效）'});return}
    wx.showToast({title:'已保存并同步'});wx.navigateBack();
  })},copy(){wx.setClipboardData({data:this.data.resultToken})},
- async resetMember(){await V.action(this,async()=>{const b=await V.api.call('reset-link',{id:this.options.id});this.setData({resultToken:b.token,tokenLabel:'密码重置码（24 小时内一次有效）'})})},
- onShareAppMessage(){return {title:'邀请加入冯如学媒',path:'/pages/auth/index?invite='+this.data.resultToken}}
+ async resetMember(){await V.action(this,async()=>{const b=await V.api.call('reset-link',{id:this.options.id});this.setData({resultToken:b.token,tokenLabel:'密码重置码（24 小时内一次有效）'})})}
 }));

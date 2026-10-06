@@ -1,4 +1,6 @@
-<view class="page auth-page"><view wx:if="{{ambientDots.length}}" class="ambient-particles {{particleStyle}}"><view wx:for="{{ambientDots}}" wx:key="id" class="ambient-dot" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.delay}}s;"/></view>
+<include src="../../templates/share-preview.wxml"/>
+<block wx:if="{{!sharePreview}}">
+<view class="page auth-page"><view wx:if="{{ambientDots.length}}" class="ambient-particles {{particleStyle}}"><view wx:for="{{ambientDots}}" wx:key="id" class="ambient-dot {{item.edge ? 'edge-dot edge-' + item.side : 'center-dot'}}" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.delay}}s;opacity:{{item.opacity || 1}};"/></view>
   <view class="brand auth-brand">
     <image class="mark" src="/images/emblem.png" mode="aspectFit"/>
     <view class="auth-title">{{ui.s14}}<br/>{{ui.s15}}</view>
@@ -82,3 +84,4 @@
     <text class="link" bindtap="connection">{{ui.s392}}</text>
   </view>
 </view>
+</block>

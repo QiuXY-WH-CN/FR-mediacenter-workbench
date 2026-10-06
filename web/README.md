@@ -101,3 +101,9 @@ Windows 启动建议使用根目录 启动全部云服务.cmd；不依赖额外 
 ## v1.0.2
 
 左下角个人中心提供通用、外观、账号设置。粒子图层位于内容上层并允许关闭；轮换间隔只在定时轮换时出现。通用可切换中文/英语；任务内容、姓名与知识库正文保留原文。新增动效验证：npm run test:motion:browser。
+
+## v1.0.3
+
+组织图采用弹性漂浮并保留拖动，粒子约90%沿页面四周移动且覆盖导航；颜色文案为白/黑。网页日历布局没有更改。部门内部日程和通知由接口鉴权过滤，网关校验会话格式。服务缺少 BOOTSTRAP_HASH 时禁止首管理员初始化，不再使用公开默认口令。
+
+发布前运行 build、test、test:workspace、test:mini、test:privacy，以及 test:mini:share、test:mini:calendar、test:mini:organization、test:mini:motion 和浏览器回归；公网重启使用 scripts/restart-local.ps1。

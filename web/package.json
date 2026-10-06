@@ -12,7 +12,12 @@
     "test:workspace": "node scripts/workspace-test.mjs",
     "test:workspace:browser": "node scripts/workspace-browser-test.mjs",
     "test:motion:browser": "node scripts/motion-browser-test.mjs",
-    "test:mini:motion": "node scripts/mini-motion-test.mjs"
+    "test:mini:motion": "node scripts/mini-motion-test.mjs",
+    "test:mini:share": "node scripts/mini-share-test.mjs",
+    "test:mini:calendar": "node scripts/mini-calendar-test.mjs",
+    "test:motion:v103": "node scripts/motion-v103-test.mjs",
+    "test:privacy": "node scripts/privacy-test.mjs",
+    "test:mini:organization": "node scripts/mini-organization-test.mjs"
   },
   "engines": {
     "node": ">=24"
@@ -25,5 +30,5 @@
     "drizzle-kit": "0.31.5",
     "esbuild": "0.25.11"
   },
-  "version": "1.0.2"
+  "version": "1.0.3"
 }

@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 process.chdir(fileURLToPath(new URL('..',import.meta.url)));
 import {build} from 'esbuild';
 const files={'/index.html':'text/html; charset=utf-8','/app.js':'text/javascript; charset=utf-8','/style.css':'text/css; charset=utf-8'};
-const release='v1.0.2';
+const release='v1.0.3';
 const assets={};for(const [file,type] of Object.entries(files))assets[file]={type,body:await readFile('src'+file,'utf8')};
 assets['/app.js'].body=await readFile('../miniprogram/utils/task-model.js','utf8').then(s=>s.replace('module.exports=','const WorkspaceModel='))+'\n'+assets['/app.js'].body;
 assets['/app.js'].body=await readFile('../miniprogram/utils/localization.js','utf8').then(s=>s.replace('module.exports=','const Localization='))+'\n'+assets['/app.js'].body;

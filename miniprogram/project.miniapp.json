@@ -1,8 +1,8 @@
 {
   "miniVersion": "v2",
   "name": "冯如学媒协作工作台",
-  "version": "1.0.2",
-  "versionCode": 102,
+  "version": "1.0.3",
+  "versionCode": 103,
   "i18nFilePath": "i18n",
   "mini-ohos": {
     "sdkVersion": "0.5.1"

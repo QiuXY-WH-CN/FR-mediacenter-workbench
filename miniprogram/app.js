@@ -1,12 +1,17 @@
 const api = require('./services/api');
+const singlePage = options => Number(options?.scene || wx.getLaunchOptionsSync?.().scene) === 1154;
 
 App({
   onLaunch(options) {
+    this.publicPreview = singlePage(options);
+    if (this.publicPreview) return;
     this.applyAuthQuery(options);
     this.hydrate();
   },
 
   onShow(options) {
+    this.publicPreview = singlePage(options);
+    if (this.publicPreview) { this.stopPolling(); return; }
     this.applyAuthQuery(options);
     this.startPolling();
     if (api.token()) api.refresh().catch(() => {});

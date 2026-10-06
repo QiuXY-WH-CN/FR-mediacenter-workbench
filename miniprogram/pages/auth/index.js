@@ -1,3 +1,4 @@
+const Share=require('../../utils/sharing');
 const { api, depts } = require('../../utils/view');
 const UI=require('../../utils/interface');
 
@@ -8,7 +9,7 @@ const COPY = {
   reset: { title: '设置新密码', subtitle: '新密码生效后，原有登录会话将失效。', submit: '保存新密码' }
 };
 
-Page({
+Page(Share.page({
   data: {
     ready: false,
     loading: true,
@@ -258,4 +259,4 @@ Page({
   connection() {
     wx.navigateTo({ url: '/pages/connection/index' });
   }
-});
+}));

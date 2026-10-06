@@ -1,1 +1,30 @@
-<view style="{{themeStyle}}" class="page {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}} {{compact ? 'compact' : ''}} {{respectReduced ? 'respect-reduced' : ''}}"><view wx:if="{{ambientDots.length}}" class="ambient-particles {{particleStyle}}"><view wx:for="{{ambientDots}}" wx:key="id" class="ambient-dot" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.delay}}s;"/></view><view class="brand"><image class="logo" src="/images/emblem.png" mode="aspectFit"/>{{ui.s53}}</view><image wx:if="{{user.avatar}}" class="profile-avatar" src="{{user.avatar}}"/><view class="title">{{user.name}}</view><view class="muted">{{user.dept}} · {{role}}</view><view wx:if="{{ syncError }}" class="error">{{syncError}}</view><view class="card" data-url="/pages/rewards/index" bindtap="go"><view class="muted">{{ui.s135}}</view><view class="points">{{points || 0}}</view><text class="link">{{ui.s395}}</text></view><view class="menu" data-url="/pages/events/index" bindtap="go">{{ui.s2}} <text>›</text></view><view class="menu" data-url="/pages/templates/index" bindtap="go">{{ui.s4}} <text>›</text></view><view class="menu" data-url="/pages/sop/index" bindtap="go">{{ui.s5}} <text>›</text></view><view class="menu" data-url="/pages/members/index" bindtap="go">{{ui.s8}} <text>›</text></view><view class="menu" data-url="/pages/profile/preferences" bindtap="go">{{ui.s312}} <text>›</text></view><view class="menu" data-url="/pages/editor/index?mode=password" bindtap="go">{{ui.s43}} <text>›</text></view><view class="menu" wx:if="{{ cloud }}" bindtap="binding">{{bound ? ui.s477 : ui.s478}} <text>›</text></view><view class="menu" data-url="/pages/connection/index" bindtap="go">{{ui.s139}} <text>›</text></view><button class="safe-button" bindtap="logout" disabled="{{busy}}">{{ui.s48}}</button><view class="muted small space">{{ui.s349}}</view><view wx:if="{{accountOpen || selectedPerson}}" class="context-dismiss" bindtap="closeContext"/><view class="native-account"><view class="native-account-trigger" bindtap="accountToggle" bindlongpress="accountPin"><image wx:if="{{currentUser.avatar}}" class="member-avatar" src="{{currentUser.avatar}}"/><text wx:else class="account-initial">{{currentUser.name}}</text><text>{{ui.s29}}</text></view><view wx:if="{{accountOpen}}" class="native-account-menu"><view class="h3">{{currentUser.name}}</view><view class="muted small">@{{currentUser.username}}</view><view class="menu" data-url="/pages/profile/index" bindtap="go">{{ui.s30}}</view><view class="menu" data-url="/pages/profile/preferences" bindtap="go">{{ui.s28}}</view><view class="menu" bindtap="accountLogout">{{ui.s45}}</view></view></view></view>
+<include src="../../templates/share-preview.wxml"/>
+<block wx:if="{{!sharePreview}}">
+<view style="{{themeStyle}}" class="page profile-page {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}} {{compact ? 'compact' : ''}} {{respectReduced ? 'respect-reduced' : ''}}">
+ <view wx:if="{{ambientDots.length}}" class="ambient-particles {{particleStyle}}"><view wx:for="{{ambientDots}}" wx:key="id" class="ambient-dot {{item.edge ? 'edge-dot edge-' + item.side : 'center-dot'}}" style="left:{{item.x}}%;top:{{item.y}}%;opacity:{{item.opacity}};animation-delay:{{item.delay}}s;"/></view>
+ <view class="brand"><image class="logo" src="/images/emblem.png" mode="aspectFit"/>{{ui.s53}}</view>
+ <view class="profile-identity card" data-url="/pages/profile/settings" bindtap="go">
+  <image wx:if="{{user.avatar}}" class="profile-avatar" src="{{user.avatar}}" mode="aspectFill"/>
+  <view wx:else class="profile-placeholder">{{user.name}}</view>
+  <view class="grow"><view class="title">{{user.name}}</view><view class="muted small">@{{user.username}}</view><view class="muted">{{departmentLabel}} · {{role}}</view><view class="link small">{{profileLabel}} ›</view></view>
+ </view>
+ <view wx:if="{{syncError}}" class="error">{{syncError}}</view>
+ <view class="card profile-points" data-url="/pages/rewards/index" bindtap="go"><view><view class="muted">{{ui.s135}}</view><view class="points">{{points || 0}}</view></view><text class="link">{{ui.s395}}</text></view>
+ <view class="card profile-menu">
+  <view class="menu" data-url="/pages/profile/preferences" bindtap="go">{{ui.s312}} <text>›</text></view>
+  <view class="menu" data-url="/pages/profile/settings" bindtap="go">{{ui.s33}} <text>›</text></view>
+  <view class="menu" data-url="/pages/editor/index?mode=password" bindtap="go">{{ui.s43}} <text>›</text></view>
+  <view class="menu" wx:if="{{cloud}}" bindtap="binding">{{bound ? ui.s477 : ui.s478}} <text>›</text></view>
+  <button class="menu profile-share" open-type="share">{{shareLabel}} <text>↗</text></button>
+ </view>
+ <view class="card profile-menu">
+  <view class="menu" data-url="/pages/events/index" bindtap="go">{{ui.s2}} <text>›</text></view>
+  <view class="menu" data-url="/pages/templates/index" bindtap="go">{{ui.s4}} <text>›</text></view>
+  <view class="menu" data-url="/pages/sop/index" bindtap="go">{{ui.s5}} <text>›</text></view>
+  <view class="menu" data-url="/pages/members/index" bindtap="go">{{ui.s8}} <text>›</text></view>
+  <view class="menu" data-url="/pages/connection/index" bindtap="go">{{ui.s139}} <text>›</text></view>
+ </view>
+ <view class="actions profile-account-actions"><button bindtap="switchAccount" disabled="{{busy}}">{{ui.s44}}</button><button class="danger" bindtap="logout" disabled="{{busy}}">{{ui.s46}}</button></view>
+ <view class="muted small profile-note">{{ui.s349}}</view>
+</view>
+</block>

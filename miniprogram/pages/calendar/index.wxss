@@ -1,0 +1,28 @@
+.calendar-toolbar{display:flex;gap:16rpx;align-items:center;margin:20rpx 0 24rpx}
+.calendar-department{flex:1;min-width:0}.calendar-department .picker{font-size:26rpx;padding:16rpx 18rpx;min-height:76rpx}
+.calendar-today{padding:16rpx 24rpx;min-height:76rpx;color:var(--accent)}
+.calendar-board{border:1rpx solid #e7e7e7;border-radius:26rpx;padding:18rpx 8rpx;background:#fff;overflow:hidden}
+.calendar-month{padding:0 10rpx}.calendar-arrow{width:66rpx;min-height:64rpx;line-height:1;padding:12rpx;font-size:38rpx;border-color:transparent;background:transparent;flex-shrink:0}
+.calendar-summary{display:flex;justify-content:center;gap:28rpx;margin:6rpx 0 22rpx;font-size:23rpx;color:#777}
+.calendar-week{display:flex;color:#858585;font-size:24rpx;text-align:center;margin-bottom:10rpx}.calendar-week>view{width:14.285714%}
+.calendar-grid{display:flex;flex-wrap:wrap;align-items:stretch}.calendar-cell{width:14.285714%;min-height:132rpx;padding:8rpx 3rpx 10rpx;border:2rpx solid transparent;border-radius:14rpx;text-align:center;position:relative;overflow:hidden}
+.calendar-number{font-size:28rpx;font-weight:650;line-height:40rpx}.calendar-is-today .calendar-number{color:var(--accent);text-decoration:underline}
+.calendar-selected{background:#f6f6f6;border-color:var(--accent);box-shadow:0 4rpx 12rpx #00000008}.calendar-selected .calendar-number{color:var(--accent)}
+.calendar-count{display:inline-flex;align-items:center;gap:5rpx;color:var(--dept-color);font-size:23rpx;font-weight:700;min-height:30rpx;line-height:30rpx}
+.calendar-count-dot{width:8rpx;height:8rpx;background:var(--dept-color);border-radius:50%}.calendar-urgent .calendar-count{color:#cb3838}.calendar-urgent .calendar-count-dot{background:#cb3838}
+.calendar-event-dots{height:30rpx;display:flex;align-items:center;justify-content:center;gap:6rpx}.calendar-event-dots text{width:8rpx;height:8rpx;border-radius:50%;background:var(--accent)}
+.calendar-preview{font-size:18rpx;color:#7c7c7c;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:26rpx;padding:0 1rpx}
+.calendar-month-empty{text-align:center;padding:20rpx;font-size:24rpx}.calendar-agenda-heading{margin:26rpx 0 4rpx;gap:16rpx}.calendar-agenda-heading .grow{text-align:center}
+.calendar-project{padding:22rpx 24rpx;margin:20rpx 0;border-top:5rpx solid var(--dept-color)}
+.calendar-project-heading{gap:14rpx;padding:2rpx 0 12rpx}.calendar-project-heading .h2{font-size:31rpx;word-break:break-word}
+.calendar-project-arrow,.calendar-child-arrow{font-size:36rpx;color:#949494;flex-shrink:0}
+.calendar-project-summary{display:flex;justify-content:space-between;gap:14rpx;font-size:23rpx;color:#838383;padding-bottom:12rpx}
+.calendar-child{display:flex;position:relative;align-items:center;gap:14rpx;margin-left:7rpx;padding:22rpx 0 22rpx 23rpx;border-left:2rpx solid #dedede;border-bottom:1rpx solid #ededed}
+.calendar-child:last-child{border-bottom:0}.calendar-child-dot{position:absolute;width:12rpx;height:12rpx;border-radius:50%;left:-7rpx;top:34rpx;border:2rpx solid #fff}
+.calendar-child .row{gap:12rpx}.calendar-child .h3{font-size:28rpx;line-height:1.5;word-break:break-word}.calendar-child .priority{font-size:22rpx;white-space:nowrap;padding:3rpx 8rpx;flex-shrink:0}
+.calendar-task-info{display:flex;gap:12rpx;align-items:center;color:#777;font-size:24rpx;margin-top:10rpx;flex-wrap:wrap}.calendar-task-info .badge{font-size:21rpx;padding:3rpx 8rpx}
+.calendar-due{display:flex;gap:10rpx;align-items:center;flex-wrap:wrap;font-size:23rpx;color:#858585;margin-top:8rpx}.calendar-due-tag{color:var(--accent);font-size:21rpx}
+.calendar-no-children{font-size:25rpx;padding:18rpx 0}.calendar-expand{width:100%;padding:14rpx 12rpx;margin-top:14rpx;background:transparent;color:var(--accent);border-color:transparent;font-size:24rpx}
+.calendar-empty{text-align:center;font-size:26rpx;padding:38rpx 24rpx}.calendar-empty button{margin-top:24rpx;font-size:25rpx}
+.dark .calendar-board{background:#191919;border-color:#333}.dark .calendar-selected{background:#252525}.dark .calendar-preview,.dark .calendar-summary,.dark .calendar-due,.dark .calendar-task-info{color:#ababab}
+.dark .calendar-child{border-color:#383838}.dark .calendar-child-dot{border-color:#191919}.compact .calendar-cell{min-height:112rpx}.compact .calendar-child{padding-top:16rpx;padding-bottom:16rpx}.calendar-cell:active{transform:scale(.96)}

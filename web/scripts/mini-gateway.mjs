@@ -160,6 +160,11 @@ export function createMiniGateway({ worker, DB, root = process.cwd(), bridgeConf
       return json(400, { error: '请求格式不正确' });
     }
 
+    if (payload.token !== undefined && payload.token !== '' &&
+        (typeof payload.token !== 'string' || !/^[a-f0-9]{64}$/.test(payload.token))) {
+      return json(400, { error: '登录凭据格式不正确' });
+    }
+
     const path = normalizePath(payload.path);
     if (!path || !ALLOWED.has(path)) return json(404, { error: '接口不存在' });
 
