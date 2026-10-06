@@ -44,7 +44,7 @@ function directRequest(base, payload) {
       header: { 'content-type': 'application/json' },
       timeout: 15000,
       success: (r) => resolve(r.data),
-      fail: () => reject(new Error('无法连接本机。开发者工具可用 127.0.0.1；手机需使用同一 Wi-Fi 下电脑的局域网地址，或配置云入口。'))
+      fail: () => reject(new Error('无法连接工作台服务器。请检查“连接设置”中的服务器地址，或确认公网隧道已启动。'))
     });
   });
 }

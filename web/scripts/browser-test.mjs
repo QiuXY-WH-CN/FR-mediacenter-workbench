@@ -2,15 +2,16 @@ import {spawn} from 'node:child_process';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright');
 const port=8877,base=`http://127.0.0.1:${port}`;
-const server=spawn(process.execPath,['scripts/dev.mjs'],{env:{...process.env,PORT:String(port),DB_PATH:':memory:'},windowsHide:true,stdio:['ignore','pipe','pipe']});
+const server=spawn(process.execPath,['scripts/dev.mjs'],{env:{...process.env,PORT:String(port),DB_PATH:':memory:',BOOTSTRAP_HASH:createHash('sha256').update('local-preview-only-setup').digest('hex')},windowsHide:true,stdio:['ignore','pipe','pipe']});
 let browser;const errors=[];
 try{
   await new Promise((resolve,reject)=>{server.stdout.on('data',b=>{if(b.toString().includes('Local:'))resolve()});server.stderr.on('data',b=>process.stderr.write(b));server.on('error',reject);server.on('exit',code=>reject(Error('Server exited '+code)))});
   browser=await chromium.launch({channel:'msedge',headless:true});
   const context=await browser.newContext({viewport:{width:1440,height:1080}});
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  const page=await context.newPage();page.on('pageerror',e=>{errors.push(e.message);console.error('BROWSER ERROR',e.message)});page.on('console',m=>{if(m.type()==='error')console.error(m.text())});
   await page.goto(base+'/#setup=local-preview-only-setup');
   await page.locator('[name=username]').fill('qa_owner');await page.locator('[name=name]').fill('测试负责人');
   await page.locator('[name=password]').fill('Browser-test-2026!');await page.locator('[name=confirm]').fill('Browser-test-2026!');
@@ -41,7 +42,7 @@ try{
   await mkdir('.local/qa',{recursive:true});await page.screenshot({path:'.local/qa/desktop-submit.png',fullPage:true});
   await page.getByRole('button',{name:'提交给 测试负责人'}).click();await page.locator('dialog').waitFor({state:'hidden'});
   await page.locator('.flow-step').first().click();await page.getByRole('button',{name:'验收通过'}).click();await page.locator('dialog').waitFor({state:'hidden'});
-  await page.locator('[data-view=rewards]').click();await page.getByText('+20',{exact:true}).waitFor();
+  await page.locator('[data-view=rewards]').first().click();await page.getByText('+20',{exact:true}).waitFor();
   await page.locator('[data-view=activities]').click();await page.getByRole('button',{name:'活动详情',exact:true}).click();await page.getByRole('button',{name:'保存为模板'}).click();await page.getByRole('button',{name:'保存模板',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});
   await page.locator('[data-view=templates]').click();await page.getByRole('heading',{name:'迎新宣传协作流程'}).waitFor();
   await page.getByRole('button',{name:'＋ 创建模板'}).click();await page.locator('[name=name]').fill('新建模板测试');await page.locator('[data-add-step]').click();await page.locator('[data-key=name]').fill('需求登记');await page.locator('[data-key=requirements]').fill('登记需求方与交付形式');await page.getByRole('button',{name:'保存模板',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});

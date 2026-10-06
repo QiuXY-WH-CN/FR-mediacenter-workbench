@@ -5,6 +5,7 @@
     "pages/tasks/index",
     "pages/calendar/index",
     "pages/profile/index",
+    "pages/profile/settings",
     "pages/events/index",
     "pages/event/index",
     "pages/task/index",

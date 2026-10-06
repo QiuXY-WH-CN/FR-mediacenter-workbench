@@ -1,0 +1,1 @@
+const depts=['办公室','新媒体运营部','视觉传达部','创意设计部'],colors=['#168875','#d47918','#3478c5','#8b5bc7'];const color=dept=>colors[depts.indexOf(dept)]||'#777777',groups=people=>depts.map(dept=>({dept,color:color(dept),people:people.filter(p=>p.dept===dept)}));module.exports={color,groups};
