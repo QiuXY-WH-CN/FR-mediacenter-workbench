@@ -1,0 +1,6 @@
+const M=require('./task-model');
+const roles={admin:'管理员',manager:'部门负责人',member:'成员'};
+function person(p){return {value:p.id,label:p.name,name:p.name,dept:p.owner?'':p.dept,roleLabel:p.owner?'初始管理员':roles[p.role]||'成员',kind:'personOption',owner:!!p.owner,role:p.role}}
+function people(list,department='',execution=false){return list.filter(p=>!['disabled','pending'].includes(p.status)&&(!execution||!p.owner)&&(!department||p.dept===department||!execution&&p.owner)).map(person)}
+function decorate(t,s,names){const event=s.events.find(e=>e.id===t.event)||{},flags=M.permissions(t,s.user,s.people,event),out={...t,owners:M.owners(t),receivers:M.receivers(t),ownerName:M.owners(t).map(id=>names[id]||'已停用成员').join('、'),receiverName:M.receivers(t).map(id=>names[id]||'已停用成员').join('、'),rewardLabel:Number(Number(t.rewardPoints||0).toFixed(2)).toString()};for(const key of ['isOwner','isReviewer','canEdit','canReassign','canProxySubmit','canArchive','needsReassignment'])out[key]=typeof t[key]==='boolean'?t[key]:flags[key];if(s._localReadOnly)for(const key of ['isOwner','isReviewer','canEdit','canReassign','canProxySubmit','canArchive'])out[key]=false;return out}
+module.exports={person,people,decorate};

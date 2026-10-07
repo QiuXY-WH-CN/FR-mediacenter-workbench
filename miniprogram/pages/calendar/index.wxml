@@ -1,5 +1,5 @@
 <template name="calendar-child">
-  <view class="calendar-child {{task.dueToday ? 'calendar-due-today' : ''}}" data-id="{{task.id}}" bindtap="openTask">
+  <view class="calendar-child {{task.status === 'done' ? 'calendar-archived' : ''}} {{task.dueToday ? 'calendar-due-today' : ''}}" data-id="{{task.id}}" bindtap="openTask">
     <view class="calendar-child-dot" style="background:{{task.departmentColor}};"/>
     <view class="grow">
       <view class="row start"><view class="h3 grow">{{task.name}}</view><text user-select="{{false}}" selectable="{{false}}" class="priority {{task.priority}}">{{task.priorityLabel}}{{ui.s98}}</text></view>
@@ -28,7 +28,7 @@
     <view class="calendar-summary"><text user-select="{{false}}" selectable="{{false}}">{{calendarLabels.monthEvents}} {{monthEventCount}}</text><text user-select="{{false}}" selectable="{{false}}">{{calendarLabels.monthTasks}} {{monthTaskCount}}</text></view>
     <view class="calendar-week"><view wx:for="{{week}}" wx:key="*this">{{item}}</view></view>
     <view class="calendar-grid" bindtouchstart="touchStart" bindtouchend="touchEnd">
-      <view wx:for="{{cells}}" wx:key="id" class="calendar-cell {{item.empty ? 'calendar-blank' : ''}} {{selected === item.id ? 'calendar-selected' : ''}} {{item.today ? 'calendar-is-today' : ''}} {{item.urgent ? 'calendar-urgent' : ''}}" data-id="{{item.id}}" bindtap="choose">
+      <view wx:for="{{cells}}" wx:key="id" class="calendar-cell {{item.empty ? 'calendar-blank' : ''}} {{selected === item.id ? 'calendar-selected' : ''}} {{item.today ? 'calendar-is-today' : ''}} {{item.urgent ? 'calendar-urgent' : ''}} {{item.completed ? 'calendar-completed' : ''}}" data-id="{{item.id}}" bindtap="choose">
         <block wx:if="{{!item.empty}}">
           <view class="calendar-number">{{item.number}}</view>
           <view class="calendar-count" wx:if="{{item.tasks}}">{{item.tasks}}<text user-select="{{false}}" selectable="{{false}}" class="calendar-count-dot"/></view>

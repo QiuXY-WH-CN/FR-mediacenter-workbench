@@ -54,11 +54,13 @@ function Test-WorkbenchProcess {
 }
 
 function Invoke-WorkbenchBuild {
-    param([string]$WebRoot, [string]$NodePath)
+    param([string]$WebRoot, [string]$NodePath, [switch]$SkipBuild)
     Push-Location -LiteralPath $WebRoot
     try {
-        & $NodePath (Join-Path $WebRoot 'scripts/build.mjs') | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw '构建失败，原有服务未停止。' }
+        if (-not $SkipBuild) {
+            & $NodePath (Join-Path $WebRoot 'scripts/build.mjs') | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw '构建失败，原有服务未停止。' }
+        }
         if (Test-Path -LiteralPath (Join-Path $WebRoot '.local/preview.db') -PathType Leaf) {
             & $NodePath (Join-Path $WebRoot 'scripts/backup.mjs') | Out-Host
             if ($LASTEXITCODE -ne 0) { throw '数据库备份失败，原有服务未停止。' }
@@ -66,9 +68,60 @@ function Invoke-WorkbenchBuild {
     } finally { Pop-Location }
 }
 
+function Save-WorkbenchBundleSnapshot {
+    param([string]$WebRoot)
+    $bundle = Join-Path $WebRoot 'dist/server/index.js'
+    $lastGood = Join-Path $WebRoot '.local/last-good/index.js'
+    # Prefer a bundle verified by a previous successful launch, even if a separate build already overwrote dist.
+    if (Test-Path -LiteralPath $lastGood -PathType Leaf) { $bundle = $lastGood }
+    if (-not (Test-Path -LiteralPath $bundle -PathType Leaf)) { return $null }
+    $folder = Join-Path $WebRoot ('.local/deployments/' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $folder | Out-Null
+    $snapshot = Join-Path $folder 'index.js'
+    Copy-Item -LiteralPath $bundle -Destination $snapshot -ErrorAction Stop
+    return $snapshot
+}
+
+function Get-WorkbenchRollbackBundle {
+    param([string]$WebRoot)
+    $receipt = Join-Path $WebRoot '.local/previous-deployment.json'
+    if (-not (Test-Path -LiteralPath $receipt)) { throw '没有可回滚的上一版服务构建。' }
+    $saved = Get-Content -LiteralPath $receipt -Raw -Encoding UTF8 | ConvertFrom-Json
+    $candidate = [IO.Path]::GetFullPath((Join-Path $WebRoot $saved.bundle))
+    $allowed = [IO.Path]::GetFullPath((Join-Path $WebRoot '.local/deployments')) + [IO.Path]::DirectorySeparatorChar
+    if (-not $candidate.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $candidate -PathType Leaf)) { throw '回滚记录无效，未修改服务或数据库。' }
+    return $candidate
+}
+
+function Start-WorkbenchNodeProcess {
+    param([string]$WebRoot, [string]$NodePath, [int]$Port, [switch]$ReadOnly)
+    $logDir = Join-Path $WebRoot '.local'
+    $oldPort = $env:PORT
+    $oldReadOnly = $env:WORKBENCH_ROLLBACK_READONLY
+    try {
+        $env:PORT = [string]$Port
+        $env:WORKBENCH_ROLLBACK_READONLY = $(if ($ReadOnly) { '1' } else { '' })
+        return Start-Process -FilePath $NodePath -ArgumentList (ConvertTo-WorkbenchArgument (Join-Path $WebRoot 'scripts/dev.mjs')) -WorkingDirectory $WebRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logDir 'server.out.log') -RedirectStandardError (Join-Path $logDir 'server.err.log') -PassThru -ErrorAction Stop
+    } finally { $env:PORT = $oldPort; $env:WORKBENCH_ROLLBACK_READONLY = $oldReadOnly }
+}
+
+function Confirm-WorkbenchDeployment {
+    param([string]$WebRoot, [string]$PreviousBundle)
+    $bundle = Join-Path $WebRoot 'dist/server/index.js'
+    if (Test-Path -LiteralPath $bundle -PathType Leaf) {
+        $goodDir = Join-Path $WebRoot '.local/last-good'
+        New-Item -ItemType Directory -Force -Path $goodDir | Out-Null
+        Copy-Item -LiteralPath $bundle -Destination (Join-Path $goodDir 'index.js') -ErrorAction Stop
+    }
+    if ($PreviousBundle) {
+        $relative = $PreviousBundle.Substring($WebRoot.TrimEnd('\','/').Length + 1)
+        [pscustomobject]@{bundle = $relative; updatedAt = (Get-Date -Format s)} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $WebRoot '.local/previous-deployment.json') -Encoding UTF8
+    }
+}
+
 function Start-WorkbenchOrigin {
     [CmdletBinding()]
-    param([string]$WebRoot, [int]$Port = 8766, [switch]$Restart, [int]$ExpectedProcessId = 0)
+    param([string]$WebRoot, [int]$Port = 8766, [switch]$Restart, [int]$ExpectedProcessId = 0, [string]$RestoreBundlePath = '')
     $webPath = (Resolve-Path -LiteralPath $WebRoot -ErrorAction Stop).ProviderPath
     $nodePath = Get-WorkbenchNode
     $logDir = Join-Path $webPath '.local'
@@ -85,7 +138,19 @@ function Start-WorkbenchOrigin {
         Write-Host '复用已经正常运行的网页服务。'
         return [pscustomobject]@{ local = $localUrl; serverId = [int]$listenerIds[0]; reused = $true }
     }
-    Invoke-WorkbenchBuild -WebRoot $webPath -NodePath $nodePath
+    if ($RestoreBundlePath) {
+        $RestoreBundlePath = [IO.Path]::GetFullPath($RestoreBundlePath)
+        $allowed = [IO.Path]::GetFullPath((Join-Path $webPath '.local/deployments')) + [IO.Path]::DirectorySeparatorChar
+        if (-not $RestoreBundlePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $RestoreBundlePath -PathType Leaf)) { throw '只允许回滚本工作区的服务构建备份。' }
+    }
+    $previousBundle = Save-WorkbenchBundleSnapshot -WebRoot $webPath
+    try {
+        Invoke-WorkbenchBuild -WebRoot $webPath -NodePath $nodePath -SkipBuild:([bool]$RestoreBundlePath)
+        if ($RestoreBundlePath) { Copy-Item -LiteralPath $RestoreBundlePath -Destination (Join-Path $webPath 'dist/server/index.js') -ErrorAction Stop }
+    } catch {
+        if ($previousBundle) { Copy-Item -LiteralPath $previousBundle -Destination (Join-Path $webPath 'dist/server/index.js') -ErrorAction Stop }
+        throw
+    }
     # Recheck ownership after building; never kill all node/port processes.
     foreach ($serverId in @(Get-WorkbenchListeners -Port $Port)) {
         $owner = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $serverId) -ErrorAction Stop
@@ -95,18 +160,29 @@ function Start-WorkbenchOrigin {
         Stop-Process -Id $serverId -ErrorAction Stop
         Wait-Process -Id $serverId -Timeout 5 -ErrorAction SilentlyContinue
     }
-    $oldPort = $env:PORT
+    $process = $null
     try {
-        $env:PORT = [string]$Port
-        $process = Start-Process -FilePath $nodePath -ArgumentList (ConvertTo-WorkbenchArgument (Join-Path $webPath 'scripts/dev.mjs')) -WorkingDirectory $webPath -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logDir 'server.out.log') -RedirectStandardError (Join-Path $logDir 'server.err.log') -PassThru -ErrorAction Stop
-    } finally { $env:PORT = $oldPort }
-    try { Wait-WorkbenchHealth -Url $localUrl -StartedProcess $process }
+        $process = Start-WorkbenchNodeProcess -WebRoot $webPath -NodePath $nodePath -Port $Port -ReadOnly:([bool]$RestoreBundlePath)
+        Wait-WorkbenchHealth -Url $localUrl -StartedProcess $process
+    }
     catch {
-        $process.Refresh()
-        if (-not $process.HasExited) { $process.Kill() }
+        if ($process) { $process.Refresh(); if (-not $process.HasExited) { $process.Kill(); [void]$process.WaitForExit(5000) } }
+        if ($previousBundle) {
+            Copy-Item -LiteralPath $previousBundle -Destination (Join-Path $webPath 'dist/server/index.js') -ErrorAction Stop
+            try {
+                $restored = Start-WorkbenchNodeProcess -WebRoot $webPath -NodePath $nodePath -Port $Port -ReadOnly
+                Wait-WorkbenchHealth -Url $localUrl -StartedProcess $restored
+                [pscustomobject]@{processId = $restored.Id; script = (Join-Path $webPath 'scripts/dev.mjs')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $logDir 'server-process.json') -Encoding UTF8
+            } catch {
+                if ($restored) { $restored.Refresh(); if (-not $restored.HasExited) { $restored.Kill() } }
+                throw '新构建启动失败；旧构建已恢复，但服务仍未通过健康检查。数据库未回滚，请查看本机日志。'
+            }
+            throw '新构建启动失败，已恢复旧构建并重新启动；数据库保持最新数据，没有回滚。'
+        }
         throw
     }
     [pscustomobject]@{ processId = $process.Id; script = (Join-Path $webPath 'scripts/dev.mjs') } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $logDir 'server-process.json') -Encoding UTF8
+    Confirm-WorkbenchDeployment -WebRoot $webPath -PreviousBundle $previousBundle
     return [pscustomobject]@{ local = $localUrl; serverId = $process.Id; reused = $false }
 }
 

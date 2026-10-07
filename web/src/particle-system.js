@@ -1,7 +1,7 @@
 // Canvas adapter for the shared physics engine; no interaction interception.
 let particleController;
 function createParticleController(canvas,preferences){
- const ctx=canvas.getContext('2d'),contacts=new Map(),settings=preferences.particleSystem,styles=Object.keys(particleNames).filter(k=>!['off','random','rotate'].includes(k)),randomStyle=styles[Math.floor(Math.random()*styles.length)],system=ParticleEngine.create({width:innerWidth,height:innerHeight,count:preferences.particleDensity||48,settings});
+ const ctx=canvas.getContext('2d');if(!ctx)throw Error('CANVAS_UNAVAILABLE');const contacts=new Map(),settings=preferences.particleSystem,styles=Object.keys(particleNames).filter(k=>!['off','random','rotate'].includes(k)),randomStyle=styles[Math.floor(Math.random()*styles.length)],system=ParticleEngine.create({width:innerWidth,height:innerHeight,count:preferences.particleDensity||48,settings});
  let frameId=0,last=0,epoch=performance.now(),disposed=false;
  const pointer=e=>{if(e.pointerType!=='touch')contacts.set(e.pointerId||0,{x:e.clientX,y:e.clientY})},leave=e=>{if(!e.relatedTarget)contacts.delete(e.pointerId||0)},touch=e=>{for(const[key]of contacts)if(String(key).startsWith('touch:'))contacts.delete(key);for(const point of e.touches||[])contacts.set('touch:'+point.identifier,{x:point.clientX,y:point.clientY})};
  document.addEventListener('pointermove',pointer,{passive:true});document.addEventListener('pointerdown',pointer,{passive:true});document.addEventListener('pointerout',leave,{passive:true});document.addEventListener('touchstart',touch,{passive:true});document.addEventListener('touchmove',touch,{passive:true});document.addEventListener('touchend',touch,{passive:true});document.addEventListener('touchcancel',touch,{passive:true});

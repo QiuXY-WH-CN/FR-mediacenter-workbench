@@ -12,7 +12,7 @@ async function member(username,dept){const token=(await call('invite',{dept,role
 const office=await member('office','办公室'),design=await member('design','创意设计部');
 const adminState=(await call('state',null,owner.cookie)).body,oid=adminState.user.id,did=(await call('info',null,design.cookie)).body.user.id;
 const privateId=(await call('events/create',{name:'PRIVATE_EVENT',description:'PRIVATE_DESCRIPTION',cloudUrl:'https://example.invalid/private-assets',date:'2026-10-10',department:'办公室'},owner.cookie)).body.id;
-await call('tasks/create',{event:privateId,name:'PRIVATE_TASK',requirements:'PRIVATE_REQUIREMENTS',owner:oid,receiver:oid,due:'2026-10-10T18:00'},owner.cookie);
+await call('tasks/create',{event:privateId,name:'PRIVATE_TASK',requirements:'PRIVATE_REQUIREMENTS',owner:(await call('info',null,office.cookie)).body.user.id,receiver:oid,due:'2026-10-10T18:00'},owner.cookie);
 const publicId=(await call('events/create',{name:'Team event',date:'2026-10-11'},owner.cookie)).body.id;
 const assigned=(await call('tasks/create',{event:publicId,name:'Assigned task',requirements:'Assigned requirements',owner:did,receiver:oid,due:'2026-10-11T18:00'},owner.cookie)).body.id;
 let state=(await call('state',null,design.cookie)).body;

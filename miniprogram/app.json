@@ -15,7 +15,9 @@
     "pages/members/index",
     "pages/sop/index",
     "pages/connection/index",
-    "pages/profile/preferences"
+    "pages/profile/preferences",
+    "pages/security/index",
+    "pages/stats/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",

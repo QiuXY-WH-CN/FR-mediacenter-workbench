@@ -8,7 +8,8 @@ export async function profileRoutes(path,b,u,db,{fail,text}) {
     if(typeof avatar!=='string'||avatar.length>18000||avatar&&!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar))fail(400,'请上传压缩后的 PNG、JPEG 或 WebP 头像');
     const old=await db.prepare('SELECT * FROM member_profiles WHERE user=?').bind(u.id).first();
     if(name===u.name&&avatar===(old?.avatar||''))fail(400,'姓名和头像尚未修改');
-    await db.prepare("INSERT INTO member_profiles (user,pending_name,pending_avatar,requested,revision,review_status) VALUES (?,?,?,?,1,'pending') ON CONFLICT(user) DO UPDATE SET pending_name=excluded.pending_name,pending_avatar=excluded.pending_avatar,requested=excluded.requested,revision=revision+1,review_status='pending',review_note=''").bind(u.id,name,avatar,Date.now()).run();
+    const result=await db.prepare("INSERT INTO member_profiles (user,pending_name,pending_avatar,requested,revision,review_status) SELECT ?,?,?,?,1,'pending' WHERE EXISTS (SELECT 1 FROM users WHERE id=? AND status='active') ON CONFLICT(user) DO UPDATE SET pending_name=excluded.pending_name,pending_avatar=excluded.pending_avatar,requested=excluded.requested,revision=revision+1,review_status='pending',review_note=''").bind(u.id,name,avatar,Date.now(),u.id).run();
+    if(!result.meta.changes)fail(403,'账号已停用或权限已更新');
     return {ok:true};
   }
   if(path==='/api/profile/review') {
@@ -17,11 +18,17 @@ export async function profileRoutes(path,b,u,db,{fail,text}) {
     const p=await db.prepare("SELECT * FROM member_profiles WHERE user=? AND revision=? AND review_status='pending'").bind(text(b.id),b.revision).first();
     if(!p)fail(409,'申请已更新或已审核，请刷新');
     const note=b.note?text(b.note,300):'';
-    if(b.action==='approve')await db.batch([
-      db.prepare("UPDATE users SET name=? WHERE id=? AND EXISTS (SELECT 1 FROM member_profiles WHERE user=? AND revision=? AND review_status='pending')").bind(p.pending_name,p.user,p.user,b.revision),
-      db.prepare("UPDATE member_profiles SET avatar=pending_avatar,pending_name=NULL,pending_avatar=NULL,review_status='approved',review_note=? WHERE user=? AND revision=? AND review_status='pending'").bind(note,p.user,b.revision)
-    ]);
-    else await db.prepare("UPDATE member_profiles SET pending_name=NULL,pending_avatar=NULL,review_status='rejected',review_note=? WHERE user=? AND revision=? AND review_status='pending'").bind(note,p.user,b.revision).run();
+    const authority="EXISTS (SELECT 1 FROM users WHERE id=? AND role='admin' AND status='active') AND EXISTS (SELECT 1 FROM users WHERE id=? AND status='active')",args=[u.id,p.user];
+    if(b.action==='approve'){
+      const results=await db.batch([
+        db.prepare("UPDATE users SET name=? WHERE id=? AND EXISTS (SELECT 1 FROM member_profiles WHERE user=? AND revision=? AND review_status='pending') AND "+authority).bind(p.pending_name,p.user,p.user,b.revision,...args),
+        db.prepare("UPDATE member_profiles SET avatar=pending_avatar,pending_name=NULL,pending_avatar=NULL,review_status='approved',review_note=? WHERE user=? AND revision=? AND review_status='pending' AND "+authority).bind(note,p.user,b.revision,...args)
+      ]);
+      if(!results[0].meta.changes||!results[1].meta.changes)fail(409,'申请或账号权限已更新，请刷新');
+    }else{
+      const result=await db.prepare("UPDATE member_profiles SET pending_name=NULL,pending_avatar=NULL,review_status='rejected',review_note=? WHERE user=? AND revision=? AND review_status='pending' AND "+authority).bind(note,p.user,b.revision,...args).run();
+      if(!result.meta.changes)fail(409,'申请或账号权限已更新，请刷新');
+    }
     return {ok:true};
   }
   return null;

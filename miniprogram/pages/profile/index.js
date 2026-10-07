@@ -7,9 +7,9 @@ Page(V.page({
     this.setData({
       user: s.user,
       role: s.roleLabel,
-      departmentLabel: UI.t(s.user.dept),
+      departmentLabel: UI.t(s.user.dept||'无部门'),
       manager: s.manager,
-      points: s.ledger.filter(x => x.user === s.user.id).reduce((n, x) => n + x.points, 0),
+      points: s.ledger.filter(x => x.user === s.user.id).reduce((n, x) => n + Math.round(Number(x.points || 0) * 100), 0) / 100,
       cloud: V.api.config().transport === 'cloud',
       shareLabel: UI.t('分享小程序'),
       profileLabel: UI.t('头像、姓名与账号设置')

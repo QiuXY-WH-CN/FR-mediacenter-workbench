@@ -1,4 +1,8 @@
 const priorities={low:{label:'低',rank:0},normal:{label:'普通',rank:1},high:{label:'高',rank:2},urgent:{label:'紧急',rank:3}};
 function compare(a,b){return Number(a.status==='done')-Number(b.status==='done')||(a.due||'9999').localeCompare(b.due||'9999')||(priorities[b.priority]?.rank??1)-(priorities[a.priority]?.rank??1)||(a.name||'').localeCompare(b.name||'')}
 function groups(events,tasks){return events.map(e=>{const children=tasks.filter(t=>t.event===e.id).sort(compare),unfinished=children.filter(t=>t.status!=='done');return {...e,tasks:children,sortTask:unfinished[0]||children[0]||{due:e.date+'T23:59',priority:e.priority||'normal',status:'done'},urgent:unfinished.some(t=>['high','urgent'].includes(t.priority))}}).sort((a,b)=>compare(a.sortTask,b.sortTask))}
-module.exports={priorities,compare,groups};
+const ids=(list,legacy)=>Array.isArray(list)&&list.length?[...new Set(list.filter(v=>typeof v==='string'&&v))]:legacy?[legacy]:[];
+const owners=t=>ids(t.owners,t.owner||t.owner_id),receivers=t=>ids(t.receivers||t.reviewers,t.receiver||t.reviewer_id);
+const participants=t=>[...new Set([...owners(t),...receivers(t)])];
+function permissions(t,u,people=[],event={}){const os=owners(t),isOwner=os.includes(u?.id)&&!u?.owner,isReviewer=receivers(t).includes(u?.id)||u?.role==='admin',team=os.map(id=>people.find(p=>p.id===id)),sameTeam=team.length>0&&team.every(p=>p&&p.dept===u?.dept&&!p.owner),ordinaryTeam=sameTeam&&team.every(p=>p.role==='member'),done=t.status==='done',manager=u?.role==='manager',admin=u?.role==='admin';return {isOwner,isReviewer,canEdit:!done&&(admin||manager&&(event.createdBy===u.id||sameTeam)),canReassign:!done&&manager&&isOwner&&['pending','active','revise','conflict'].includes(t.status),canProxySubmit:!done&&(admin||manager&&ordinaryTeam),canArchive:!done&&(admin||manager&&ordinaryTeam),needsReassignment:!done&&team.some(p=>p?.owner)}}
+module.exports={priorities,compare,groups,owners,receivers,participants,permissions};

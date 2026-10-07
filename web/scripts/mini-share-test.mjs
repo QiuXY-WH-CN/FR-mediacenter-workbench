@@ -121,7 +121,7 @@ for (const route of app.pages) {
 let instance, authReads=0, appTimers=0;
 vm.runInNewContext(readFileSync('../miniprogram/app.js','utf8'),{
   App:spec=>instance=spec,wx:{getLaunchOptionsSync:()=>({scene:1154})},
-  require:()=>({token(){authReads++;return 'private-token'},config(){authReads++;return {pollMs:30000}}}),
+  require:p=>p.includes('recovery')?{bootRepair(){authReads++},capture(){}}:{token(){authReads++;return 'private-token'},config(){authReads++;return {pollMs:30000}}},
   setInterval(){appTimers++;return 1},clearInterval(){}
 });
 instance.onLaunch({scene:1154,query:{setup:'PRIVATE_SETUP'}});instance.onShow({scene:1154});

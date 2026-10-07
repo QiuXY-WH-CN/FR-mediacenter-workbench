@@ -1,6 +1,7 @@
+import TaskModel from '../../miniprogram/utils/task-model.js';
+import {standardChecks,activeTaskPeople,validateTaskParties,taskChecks,taskDependencies,taskReward} from './task-actions.js';
 const DAY = 86400000;
 const departments = ['办公室', '新媒体运营部', '视觉传达部', '创意设计部'];
-const standardChecks = ['核对活动信息与交付要求', '整理成果与交接说明'];
 export const builtinTemplates = [
   {id:'ceremony', name:'典礼宣传', description:'提前预写，照片交付后再排版。', steps:[
     {name:'推送文案预写',dept:'新媒体运营部',offset:-2,time:'18:00',depends:[],requirements:'核对活动主题、人物与流程，活动前预写文案。'},
@@ -21,7 +22,7 @@ export const builtinTemplates = [
     {name:'设计定稿',dept:'创意设计部',offset:-1,time:'18:00',depends:[0],requirements:'交付预览图，核对尺寸、文案与输出规格。'},
     {name:'设计源文件归档',dept:'创意设计部',offset:2,time:'18:00',depends:[1],requirements:'定稿后 3 天内保留可编辑源文件和导出图，记录字体与素材来源。'}]}
 ];
-export function normalizeWorkspace(s) { s.templates ||= []; s.ledger ||= []; return s; }
+export function normalizeWorkspace(s) { s.templates ||= []; s.ledger ||= []; for(const t of s.tasks||[]){t.owners=TaskModel.owners(t);t.receivers=TaskModel.receivers(t);t.owner=t.owner_id=t.owners[0]||'';t.receiver=t.reviewer_id=t.receivers[0]||'';t.depts||=[t.dept];} return s; }
 export function extendState(s,u) {
   normalizeWorkspace(s);
   return {templates:[...builtinTemplates,...s.templates],ledger:s.ledger.filter(x=>u.role==='admin'||x.user===u.id||u.role==='manager'&&x.dept===u.dept)};
@@ -31,7 +32,7 @@ export async function workflows(path,b,u,db,h) {
   const optional=(v,max=3000)=>v==null||v===''?'':text(v,max);
   const url=v=>{v=optional(v,2000);if(v){let p;try{p=new URL(v)}catch{fail(400,'链接格式不正确')}if(!['https:','http:'].includes(p.protocol)||p.username||p.password)fail(400,'请填写 http 或 https 链接')}return v};
   const priority=v=>{v=v||'normal';if(!['low','normal','high','urgent'].includes(v))fail(400,'任务优先级无效');return v};
-  const points=v=>{const n=Number(v||0);if(!Number.isSafeInteger(n)||n<0||n>10000)fail(400,'积分须为 0—10000 的整数');return n};
+  const points=v=>taskReward(v,fail);
   const fields=(x,old={})=>{
     const d=date(x.date??old.date),allDay=x.allDay??old.allDay??true;
     if(typeof allDay!=='boolean')fail(400,'全天设置无效');
@@ -53,28 +54,24 @@ export async function workflows(path,b,u,db,h) {
   if(path==='/api/templates/save'){
     if(!manager(u))fail(403,'需要负责人权限');
     const name=text(b.name,60),description=optional(b.description,500),steps=normalizeSteps(b.steps);
-    return shared(db,s=>{normalizeWorkspace(s);const old=s.templates.find(t=>t.id===b.id);if(b.id&&(!old||!(u.role==='admin'||old.createdBy===u.id)))fail(403,'无权修改此模板');
+    return shared(db,s=>{if(!manager(u))fail(403,'需要负责人权限');normalizeWorkspace(s);const old=s.templates.find(t=>t.id===b.id);if(b.id&&(!old||!(u.role==='admin'||old.createdBy===u.id)))fail(403,'无权修改此模板');
       const template={id:old?.id||crypto.randomUUID(),name,description,steps,createdBy:old?.createdBy||u.id};
       if(old)s.templates[s.templates.indexOf(old)]=template;else s.templates.push(template);
-      log(s,`已保存模板「${name}」`);return {ok:true,id:template.id};});
+      log(s,`已保存模板「${name}」`);return {ok:true,id:template.id};},u);
   }
   if(path==='/api/events/create'){
     if(!manager(u))fail(403,'需要负责人权限');
-    const f=fields(b);if(f.source==='外派需求'&&u.role!=='admin'&&u.dept!=='办公室')fail(403,'外派需求请由办公室登记派单');
-    const people=(await db.prepare("SELECT id,dept FROM users WHERE status='active'").all()).results;
-    return shared(db,s=>{normalizeWorkspace(s);const templateId=b.template||'blank';const template=[...builtinTemplates,...s.templates].find(t=>t.id===templateId);if(templateId!=='blank'&&!template)fail(400,'模板无效');
+    return shared(db,async s=>{if(!manager(u))fail(403,'需要负责人权限');const f=fields(b);if(f.source==='外派需求'&&u.role!=='admin'&&u.dept!=='办公室')fail(403,'外派需求请由办公室登记派单');const people=await activeTaskPeople(db);normalizeWorkspace(s);const templateId=b.template||'blank';const template=[...builtinTemplates,...s.templates].find(t=>t.id===templateId);if(templateId!=='blank'&&!template)fail(400,'模板无效');
       const id=crypto.randomUUID(),steps=template?.steps||[];
       const assignments=steps.map((x,i)=>{
         const legacy=x.dept==='视觉传达部'?b.visual:x.dept==='新媒体运营部'?b.editor:u.id;
         const selected=b.assignments?.[i];
-        const owner=people.find(p=>p.id===(selected?.owner||legacy));
-        const receiver=people.find(p=>p.id===(selected?.receiver||(!b.assignments&&templateId==='ceremony'&&i===2?b.editor:u.id)));
-        if(!owner||!receiver)fail(400,'请为每个环节选择已开通的负责人和验收人');if(f.department&&(owner.dept!==f.department||receiver.dept!==f.department))fail(400,'部门内部流程只能选择本部门负责人和验收人');return {owner,receiver};
+        return validateTaskParties(selected||{owner:legacy,receiver:!b.assignments&&templateId==='ceremony'&&i===2?b.editor:u.id},null,people,f,fail);
       });
       s.events.unshift({id,...f,type:template?.name||'自由活动',template:templateId,createdBy:u.id});
-      steps.forEach((x,i)=>{const {owner,receiver}=assignments[i];s.tasks.push({id:id+'-'+i,event:id,priority:x.priority||f.priority,name:x.name,owner:owner.id,dept:owner.dept,receiver:receiver.id,due:shift(f.date,x.offset)+'T'+x.time,status:x.depends.length?'blocked':'pending',depends:x.depends.map(j=>id+'-'+j),requirements:x.requirements,checks:[...standardChecks],checked:[false,false],rewardPoints:x.rewardPoints??f.rewardPoints,rewardNote:x.rewardNote||f.rewardNote});});
+      steps.forEach((x,i)=>{s.tasks.push({id:id+'-'+i,event:id,...assignments[i],priority:x.priority||f.priority,name:x.name,due:shift(f.date,x.offset)+'T'+x.time,status:x.depends.length?'blocked':'pending',depends:x.depends.map(j=>id+'-'+j),requirements:x.requirements,checks:[...standardChecks],checked:[false,false],rewardPoints:x.rewardPoints??f.rewardPoints,rewardNote:x.rewardNote||f.rewardNote});});
       log(s,`已创建「${f.name}」及 ${steps.length} 项任务`);return {ok:true,id};
-    });
+    },u);
   }
   if(path==='/api/events/update')return shared(db,s=>{
     const e=s.events.find(x=>x.id===b.id);if(!e||!canManageEvent(u,e))fail(403,'无权修改此活动');
@@ -82,15 +79,11 @@ export async function workflows(path,b,u,db,h) {
     const delta=Math.round((Date.parse(f.date)-Date.parse(e.date))/DAY);
     if(delta)s.tasks.filter(t=>t.event===e.id&&t.status!=='done').forEach(t=>{t.due=shift(t.due,delta)});
     Object.assign(e,f);log(s,`已更新「${e.name}」的活动信息`, 'all');return {ok:true};
-  });
+  },u);
   if(path==='/api/tasks/create'){
-    const p=await db.prepare("SELECT id,dept FROM users WHERE id=? AND status='active'").bind(text(b.owner)).first();
-    const r=await db.prepare("SELECT id,dept FROM users WHERE id=? AND status='active'").bind(text(b.receiver)).first();
-    if(!p||!r)fail(400,'请选择已开通成员');
-    return shared(db,s=>{const e=s.events.find(x=>x.id===b.event);if(!e||!canManageEvent(u,e))fail(403,'无权添加任务');
-      if(e.department&&(p.dept!==e.department||r.dept!==e.department))fail(400,'部门内部任务只能分配给本部门成员');const depends=b.depends||[];if(!Array.isArray(depends)||new Set(depends).size!==depends.length||depends.some(id=>!s.tasks.some(t=>t.id===id&&t.event===e.id)))fail(400,'前序任务无效');
-      const id=crypto.randomUUID();s.tasks.push({id,event:e.id,priority:priority(b.priority),name:text(b.name,100),owner:p.id,dept:p.dept,receiver:r.id,due:date(b.due,true),depends,status:depends.some(id=>s.tasks.find(t=>t.id===id).status!=='done')?'blocked':'pending',requirements:text(b.requirements,3000),checks:[...standardChecks],checked:[false,false],rewardPoints:points(b.rewardPoints??e.rewardPoints),rewardNote:optional(b.rewardNote??e.rewardNote,500)});
-      log(s,`新任务「${b.name}」已分配`,p.id);return {ok:true,id};});
+    return shared(db,async s=>{const people=await activeTaskPeople(db);const e=s.events.find(x=>x.id===b.event);if(!e||!canManageEvent(u,e))fail(403,'无权添加任务');
+      const parties=validateTaskParties(b,null,people,e,fail),id=crypto.randomUUID(),depends=taskDependencies(b.depends,e.id,id,s,fail),checks=taskChecks(b.checks,text,fail);s.tasks.push({id,event:e.id,...parties,priority:priority(b.priority),name:text(b.name,100),due:date(b.due,true),depends,status:depends.some(id=>s.tasks.find(t=>t.id===id).status!=='done')?'blocked':'pending',requirements:text(b.requirements,3000),checks,checked:checks.map(()=>false),rewardPoints:points(b.rewardPoints??e.rewardPoints),rewardNote:optional(b.rewardNote??e.rewardNote,500)});
+      log(s,`新任务「${b.name}」已分配`,parties.owners,e.department||'');return {ok:true,id};},u);
   }
   return null;
 }

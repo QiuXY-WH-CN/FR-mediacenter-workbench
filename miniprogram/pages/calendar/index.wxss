@@ -26,3 +26,5 @@
 .calendar-empty{text-align:center;font-size:26rpx;padding:38rpx 24rpx}.calendar-empty button{margin-top:24rpx;font-size:25rpx}
 .dark .calendar-board{background:#191919;border-color:#333}.dark .calendar-selected{background:#252525}.dark .calendar-preview,.dark .calendar-summary,.dark .calendar-due,.dark .calendar-task-info{color:#ababab}
 .dark .calendar-child{border-color:#383838}.dark .calendar-child-dot{border-color:#191919}.compact .calendar-cell{min-height:112rpx}.compact .calendar-child{padding-top:16rpx;padding-bottom:16rpx}.calendar-cell:active{transform:scale(.96)}
+
+.calendar-archived{border-left-color:#9b9b9b!important}.calendar-archived .calendar-child-dot{background:#9b9b9b!important}.calendar-archived .h3,.calendar-archived .calendar-due{color:#858585}.calendar-completed .calendar-count,.calendar-completed .calendar-preview{color:#888}.calendar-completed .calendar-count-dot{background:#999}.dark .calendar-archived .h3,.dark .calendar-archived .calendar-due{color:#aaa}

@@ -1,0 +1,1 @@
+.task-participants{display:flex;flex-wrap:wrap;gap:24rpx;margin:22rpx 0}.task-participants>view{flex:1;min-width:220rpx;word-break:break-word}.task-participants .muted{display:block;font-size:.88em;margin-bottom:8rpx}.actions button{white-space:normal;height:auto;min-height:88rpx}

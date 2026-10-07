@@ -24,18 +24,35 @@
     "test:mini:particles": "node scripts/mini-particles-test.mjs",
     "test:mini:font": "node scripts/mini-font-mobile-test.mjs",
     "test:startup": "node scripts/service-start-test.mjs",
-    "test:mini:compile": "node scripts/native-compile-test.mjs"
+    "test:mini:compile": "node scripts/native-compile-test.mjs",
+    "test:login": "node scripts/login-security-test.mjs",
+    "test:statistics": "node scripts/observability-test.mjs",
+    "test:tasks:v105": "node scripts/task-workflow-test.mjs",
+    "test:tasks:v105:browser": "node scripts/task-browser-test.mjs",
+    "test:recovery": "node scripts/recovery-test.mjs",
+    "test:recovery:browser": "node scripts/recovery-browser-test.mjs",
+    "test:rollback": "node scripts/rollback-gate-test.mjs && node scripts/service-rollback-test.mjs",
+    "test:organization:physics": "node scripts/organization-physics-test.mjs",
+    "test:organization:browser": "node scripts/organization-browser-test.mjs",
+    "test:security:browser": "node scripts/security-browser-test.mjs",
+    "test:avatar:browser": "node scripts/avatar-v105-browser-test.mjs",
+    "test:mini:workflow": "node scripts/native-workflow-v105-test.mjs",
+    "test:mini:avatar": "node scripts/native-avatar-v105-test.mjs",
+    "test:mini:security": "node scripts/native-stats-security-test.mjs",
+    "test:mini:login": "node scripts/native-login-test.mjs",
+    "test:calendar:departments": "node scripts/cross-department-calendar-test.mjs",
+    "test:tasks:race": "node scripts/task-account-race-test.mjs"
   },
   "engines": {
     "node": ">=24"
   },
   "dependencies": {
     "bcryptjs": "3.0.2",
-    "drizzle-orm": "0.44.7"
+    "drizzle-orm": "0.45.2"
   },
   "devDependencies": {
     "drizzle-kit": "0.31.5",
     "esbuild": "0.25.11"
   },
-  "version": "1.0.4"
+  "version": "1.0.5"
 }

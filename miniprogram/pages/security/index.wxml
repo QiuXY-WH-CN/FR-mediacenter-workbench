@@ -1,0 +1,14 @@
+<include src="../../templates/share-preview.wxml"/>
+<block wx:if="{{!sharePreview}}">
+<view class="page local-security-page {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}} {{fontScale > 1.12 ? 'font-large' : ''}}" style="{{themeStyle}}" bindtouchstart="particleTouchStart" bindtouchmove="particleTouchMove" bindtouchend="particleTouchEnd" bindtouchcancel="particleTouchEnd">
+ <particle-field id="particle-field" enabled="{{motion && particles !== 'off'}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/>
+ <view class="brand"><image class="logo" src="/images/emblem.png" mode="aspectFit"/>冯如学媒</view>
+ <view class="eyebrow">LOCAL SAFETY CENTER</view><view class="title">{{l.title}}</view><view class="muted">{{l.intro}}</view>
+ <view wx:if="{{readOnly}}" class="hint">{{l.readonly}}</view>
+ <view class="card local-checks"><view class="local-check" wx:for="{{checks}}" wx:key="key"><view class="local-check-label">{{item.label}}</view><view class="local-check-value {{item.good ? 'good' : 'attention'}}">{{item.value}}</view></view></view>
+ <view class="local-actions"><button class="primary" bindtap="repair">{{l.repair}}</button><button bindtap="reset">{{l.reset}}</button><button bindtap="restart">{{l.restart}}</button><button bindtap="clear">{{l.clear}}</button></view>
+ <view class="card"><view class="h2">{{l.result}}</view><view class="muted setting-note">{{recoveryLabel}}</view><view wx:if="{{health.lastRecovery}}" class="small muted">{{health.lastRecovery.when}}</view></view>
+ <view class="card"><view class="h2">{{l.history}}</view><view wx:for="{{health.errors}}" wx:key="code" class="local-error"><text user-select="{{false}}" selectable="{{false}}">{{item.code}}</text><view class="muted small">{{item.type}} · {{item.count}} · {{item.last}}</view></view><view wx:if="{{!health.errors.length}}" class="muted setting-note">{{l.empty}}</view></view>
+ <button bindtap="copy">{{l.copy}}</button><view class="muted small local-privacy-note">{{l.noData}}</view>
+</view>
+</block>

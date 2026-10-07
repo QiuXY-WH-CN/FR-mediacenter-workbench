@@ -14,3 +14,4 @@
 .text-btn { background: none; border: 0; color: #b04b05; padding: 16rpx 8rpx; font-size: 28rpx; text-align: left; }
 .auth-note { margin-top: 24rpx; font-size: 24rpx; color: #9a9188; }
 .auth-foot { text-align: center; margin-top: 30rpx; }
+.captcha-row{display:flex;align-items:center;gap:16rpx}.captcha-row input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:3rpx}.captcha-image{width:270rpx;height:96rpx;background:#f8f8f8;border-radius:16rpx;flex-shrink:0}

@@ -11,6 +11,8 @@
  <view wx:if="{{syncError}}" class="error">{{syncError}}</view>
  <view class="card profile-points" data-url="/pages/rewards/index" bindtap="go"><view><view class="muted">{{ui.s135}}</view><view class="points">{{points || 0}}</view></view><text user-select="{{false}}" selectable="{{false}}" class="link">{{ui.s395}}</text></view>
  <view class="card profile-menu">
+  <view class="menu" data-url="/pages/security/index" bindtap="go">{{language === 'en' ? 'Local Safety Center' : '本机安全中心'}} <text user-select="{{false}}" selectable="{{false}}">›</text></view>
+  <view class="menu" wx:if="{{user.role === 'admin'}}" data-url="/pages/stats/index" bindtap="go">{{language === 'en' ? 'Access statistics' : '访问统计'}} <text user-select="{{false}}" selectable="{{false}}">›</text></view>
   <view class="menu" data-url="/pages/profile/preferences" bindtap="go">{{ui.s312}} <text user-select="{{false}}" selectable="{{false}}">›</text></view>
   <view class="menu" data-url="/pages/profile/settings" bindtap="go">{{ui.s33}} <text user-select="{{false}}" selectable="{{false}}">›</text></view>
   <view class="menu" data-url="/pages/editor/index?mode=password" bindtap="go">{{ui.s43}} <text user-select="{{false}}" selectable="{{false}}">›</text></view>

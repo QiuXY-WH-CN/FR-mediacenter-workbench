@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import vm from 'node:vm';
+const require=createRequire(import.meta.url);
+globalThis.wx={getStorageSync(){},getSystemInfoSync:()=>({theme:'light'})};
+const view=require('../../miniprogram/utils/view.js'),organization=require('../../miniprogram/utils/organization.js'),model=require('../../miniprogram/utils/task-model.js');
+const media='新媒体运营部',visual='视觉传达部';
+// This snapshot is already authorized by the backend: filtering may not fetch extra tasks.
+const snapshot={settings:{language:'zh-CN',workspace:media},user:{id:'media-user',role:'member',dept:media},people:[],events:[{id:'shared',name:'跨部门活动',date:'2026-10-07',department:''},{id:'empty',name:'部门空白日程',date:'2026-10-07',department:media},{id:'legacy',name:'旧任务活动',date:'2026-10-07',department:''},{id:'other',name:'其他部门',date:'2026-10-07',department:visual}],tasks:[{id:'joint',event:'shared',name:'多人任务',dept:visual,depts:[visual,media],owners:['visual-user','media-user'],receivers:['reviewer'],due:'2026-10-07T10:00',status:'active'},{id:'archived',event:'shared',name:'共同归档',dept:visual,depts:[visual,media],due:'2026-10-07T09:00',status:'done'},{id:'old',event:'legacy',name:'兼容旧任务',dept:media,due:'2026-10-07T12:00',status:'pending'},{id:'other-only',event:'other',dept:visual,due:'2026-10-07T12:00',status:'active'}]};
+const definitions=readFileSync(new URL('../src/enhancements.js',import.meta.url),'utf8').split(/\r?\n/).filter(line=>/^const visible(?:Events|Tasks)=/.test(line)).join('\n');
+const web=vm.runInNewContext(definitions+'\n({tasks:visibleTasks(),events:visibleEvents()})',{state:snapshot,calendarDept:media});
+assert.deepEqual(Array.from(web.tasks,t=>t.id),['joint','archived','old']);
+assert.deepEqual(Array.from(web.events,e=>e.id),['shared','empty','legacy']);
+let page;const source=readFileSync(new URL('../../miniprogram/pages/calendar/index.js',import.meta.url),'utf8');
+vm.runInNewContext(source,{Page:spec=>{page=spec},require:name=>name.endsWith('/view')?{...view,page:spec=>spec}:name.endsWith('/organization')?organization:model,Date});
+page.snapshot=snapshot;page.data={...page.data,deptIndex:2};
+assert.equal(page.data.depts[2],media);
+const native=page.visibleSchedule();
+assert.deepEqual(Array.from(native.tasks,t=>t.id),['joint','archived','old']);
+assert.deepEqual(Array.from(native.events,e=>e.id),['shared','empty','legacy']);
+assert.equal(native.tasks.find(t=>t.id==='archived').status,'done');
+const restricted={...snapshot,tasks:snapshot.tasks.filter(t=>t.id==='old')};
+page.snapshot=restricted;assert.deepEqual(Array.from(page.visibleSchedule().tasks,t=>t.id),['old'],'Department filters keep the authorized snapshot boundary');
+console.log('PASS cross-department calendars: second executor department, gray archive retention, empty department events, scalar compatibility and authorized snapshot boundaries on web/native.');

@@ -38,7 +38,7 @@ Page(V.page({
   visibleSchedule() {
     // Use only the server's authorized snapshot; selection never fetches hidden tasks.
     const dept = this.data.deptIndex ? this.data.depts[this.data.deptIndex] : '';
-    const tasks = (this.snapshot?.tasks || []).filter(task => !dept || task.dept === dept);
+    const tasks = (this.snapshot?.tasks || []).filter(task => !dept || (task.depts || [task.dept]).includes(dept));
     const events = (this.snapshot?.events || []).filter(event => !dept || event.department === dept || tasks.some(task => task.event === event.id));
     return {tasks, events, dept};
   },
@@ -79,7 +79,7 @@ Page(V.page({
       const due = tasks.filter(task => dateKey(task.due) === id);
       const active = events.filter(event => contains(event, id));
       return {id, number: index + 1, today: id === today, tasks: due.length,
-        events: active.length, total: due.length + active.length,
+        events: active.length, total: due.length + active.length, completed: due.length>0&&due.every(task=>task.status==='done'),
         urgent: due.some(task => task.status !== 'done' && ['urgent', 'high'].includes(task.priority)),
         preview: due[0]?.name || active[0]?.name || ''};
     });

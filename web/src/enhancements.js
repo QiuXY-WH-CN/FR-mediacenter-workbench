@@ -6,8 +6,8 @@ const dayShift=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDat
 const dayDiff=(a,b)=>Math.round((Date.parse(a.slice(0,10))-Date.parse(b.slice(0,10)))/86400000);
 const externalLink=(url,label,extra='')=>url?`<a class="secondary link-button" href="${esc(url)}" target="_blank" rel="noopener noreferrer" ${extra}>${esc(label)} ↗</a>`:'';
 const eventTime=e=>`${dateText(e.date)}${e.allDay===false?' '+esc(e.startTime):' · 全天'}${e.endDate&&e.endDate!==e.date?' — '+dateText(e.endDate):''}${e.allDay===false?' — '+esc(e.endTime):''}`;
-const visibleEvents=()=>state.events.filter(e=>!calendarDept||state.tasks.some(t=>t.event===e.id&&t.dept===calendarDept));
-const visibleTasks=()=>state.tasks.filter(t=>!calendarDept||t.dept===calendarDept);
+const visibleEvents=()=>state.events.filter(e=>!calendarDept||e.department===calendarDept||state.tasks.some(t=>t.event===e.id&&(t.depts||[t.dept]).includes(calendarDept)));
+const visibleTasks=()=>state.tasks.filter(t=>!calendarDept||(t.depts||[t.dept]).includes(calendarDept));
 function rewardFields(value={}) {return `<div class="form-grid"><label class="field">每项任务积分<input name="rewardPoints" type="number" min="0" max="10000" step="1" value="${Number(value.rewardPoints||0)}"></label><label class="field">其他奖励备注<input name="rewardNote" maxlength="500" value="${esc(value.rewardNote||'')}" placeholder="如：优秀作品展示、实践证明"></label></div><p class="sub">任务验收通过后积分入账一次。活动中的设置用于新任务，已有任务可在调整分工中修改。</p>`}
 
 // Keep open forms intact while refreshing data; mutations and sibling tabs refresh immediately.
@@ -21,8 +21,8 @@ render=function(){
 const baseAuth=auth;
 auth=function(...args){baseAuth(...args);const mark=$('.auth-brand .mark');if(mark)mark.outerHTML='<img class="brand-wordmark" src="/brand/wordmark.png" alt="冯如书院 FENGRU COLLEGE">'};
 refresh=async function(){
-  const serial=++refreshSerial,next=await baseApi('state');
-  const nextMembers=view==='members'?(await baseApi('members')).members:members;
+  const serial=++refreshSerial,next=await api('state');
+  const nextMembers=view==='members'?(await api('members')).members:members;
   if(serial!==refreshSerial)return;
   state=next;user=state.user;members=nextMembers;render();
 };

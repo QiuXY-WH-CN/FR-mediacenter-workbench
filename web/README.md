@@ -1,6 +1,6 @@
 # 冯如学媒协作工作台 · 网页与服务端
 
-当前版本 **v1.0.4**。服务端同时提供网页资源、业务接口和 `/mini/api` 小程序网关。多端使用同一份业务数据和账号设置。
+当前版本 **v1.0.5**。服务端同时提供网页资源、业务接口和 `/mini/api` 小程序网关。多端使用同一份业务数据和账号设置。
 
 ## 环境与构建
 
@@ -114,4 +114,13 @@ dist/      构建后的服务
 .local/    本机数据库、备份与日志，不提交
 ```
 
-已有数据库在更新服务前备份至 `.local/backups/`。`.env`、`.local/`、真实隧道凭据、初始化令牌和小程序密钥不得提交到公开仓库。未配置 `BOOTSTRAP_HASH` 时禁止首管理员初始化，不使用公开默认口令。版本按 `v1.0.4 → v1.0.5` 的补丁序列递增。
+已有数据库在更新服务前备份至 `.local/backups/`。`.env`、`.local/`、真实隧道凭据、初始化令牌和小程序密钥不得提交到公开仓库。未配置 `BOOTSTRAP_HASH` 时禁止首管理员初始化，不使用公开默认口令。版本按 `v1.0.5 → v1.0.6` 的补丁序列递增。
+
+
+## v1.0.5 验证与恢复
+
+新增核心回归：`pnpm run test:login`、`pnpm run test:statistics`、`pnpm run test:tasks:v105`、`pnpm run test:recovery`、`pnpm run test:rollback`。组织、任务、头像、验证码/统计与安全中心另有真实浏览器专项；原生用官方 WCC/WXSS 完整编译，测试资料全部隔离。
+
+`scripts/rollback-local.ps1` 只恢复程序包且验证工作区路径，保留最新数据库；回退只读保护禁止旧代码执行写入或新密码登录。正常重新构建启动解除回退模式。锁定管理员仅本机操作员可用 `scripts/admin-reset.mjs --username ADMIN_USERNAME --issue`，重置链接仅写入 .local。本机诊断不向服务端上传，站长统计采用 14 天有界脱敏请求记录。
+
+依赖安全：ORM 固定为 0.45.2，修复 [SQL 标识符转义漏洞](https://github.com/advisories/GHSA-gpj5-g38j-94v9)；开发工具间接引用的 esbuild 通过 `pnpm-workspace.yaml` 固定为 0.25.11。发布前使用 npm 官方接口运行完整 `pnpm audit`，本次生产和开发依赖均未检出已知漏洞。

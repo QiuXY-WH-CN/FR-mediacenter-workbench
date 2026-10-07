@@ -1,14 +1,15 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import {guard} from '../src/login-security.js';
 
 const DAY = 86400000;
-const GET_PATHS = new Set(['info', 'state', 'members']);
+const GET_PATHS = new Set(['info', 'state', 'members', 'stats']);
 const POST_PATHS = new Set([
-  'setup', 'login', 'register', 'recover', 'logout', 'password',
+  'setup', 'login', 'captcha', 'register', 'recover', 'logout', 'password',
   'events/create', 'events/update', 'events/reschedule',
   'tasks/create', 'tasks/action', 'templates/save',
-  'members/update', 'invite', 'reset-link', 'profile/request', 'profile/review', 'settings/save', 'account/request', 'account/cancel', 'account/review'
+  'members/update', 'invite', 'reset-link', 'profile/request', 'profile/review', 'settings/save', 'account/request', 'account/cancel', 'account/review', 'stats/maintenance'
 ]);
 const WECHAT_PATHS = new Set(['wechat/login', 'wechat/bind', 'wechat/unbind', 'wechat/status']);
 const ALLOWED = new Set([...GET_PATHS, ...POST_PATHS, ...WECHAT_PATHS, 'sop', 'health']);
@@ -114,6 +115,7 @@ async function handleWechat(path, payload, identity, token, db) {
     const user = userForIdentity(db, identity);
     if (!user) return json(403, { error: '当前微信尚未绑定学媒账号，请先使用账号密码登录后在“我的”中绑定' });
     if (user.status !== 'active') return json(403, { error: user.status === 'pending' ? '账号等待负责人审核' : '账号已停用' });
+    if ((await guard(db, user.username)).locked) return json(423, { error: '密码错误已达 10 次，请联系管理员重置密码。', code: 'PASSWORD_LOCKED', locked: true });
     return json(200, { ok: true }, { sessionToken: createMiniSession(db, user.id) });
   }
 

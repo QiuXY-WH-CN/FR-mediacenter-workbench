@@ -2,9 +2,12 @@ import http from 'node:http';
 import {readFile,readdir,mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {networkInterfaces} from 'node:os';
+import {isIP} from 'node:net';
+import {recordRequest} from '../src/observability.js';
 import {database} from './local-db.mjs';
 import worker from '../dist/server/index.js';
 import {createMiniGateway} from './mini-gateway.mjs';
+import {rollbackGate} from './rollback-gate.mjs';
 
 const lan = process.argv.includes('--lan') || process.env.HOST === '0.0.0.0';
 const port = Number(process.env.PORT || 8766);
@@ -21,6 +24,7 @@ const env = {DB, BOOTSTRAP_HASH: bootstrapHash};
 const mini = createMiniGateway({worker, DB});
 
 const server = http.createServer(async(req,res)=>{
+  const started=Date.now();
   try{
     const chunks=[];let size=0;
     for await(const c of req){size+=c.length;if(size>100000){res.writeHead(413);res.end('Request too large');return}chunks.push(c)}
@@ -29,21 +33,27 @@ const server = http.createServer(async(req,res)=>{
     const url = new URL(req.url, origin);
     const hasBody = !['GET','HEAD'].includes(req.method||'GET');
     const request = new Request(url.toString(),{method:req.method,headers:new Headers(req.headers),...(hasBody?{body:Buffer.concat(chunks)}:{})});
-    const response = url.pathname === '/mini/api' ? await mini(request, env) : await worker.fetch(request, env);
-    if(url.pathname==='/' && (req.method||'GET').toUpperCase()==='GET'){const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;DB.sqlite.prepare('INSERT INTO site_stats (date,hits) VALUES (?,1) ON CONFLICT(date) DO UPDATE SET hits=hits+1').run(today)}
+    const peer=req.socket.remoteAddress||'',forwarded=String(req.headers['cf-connecting-ip']||''),loopback=['127.0.0.1','::1','::ffff:127.0.0.1'].includes(peer);
+    const edgeForwarded=!lan&&loopback&&/^[a-f0-9]{16}-[a-z0-9]{3,8}$/i.test(String(req.headers['cf-ray']||''))&&isIP(forwarded)>0;
+    const requestEnv={...env,TELEMETRY_CONTEXT:{source:edgeForwarded?'cloudflare':'unknown',ip:edgeForwarded?forwarded:peer,country:edgeForwarded?String(req.headers['cf-ipcountry']||''):''}};
+    const response = await rollbackGate(request,process.env.WORKBENCH_ROLLBACK_READONLY==='1') || (url.pathname === '/mini/api' ? await mini(request, {...requestEnv,DISABLE_TELEMETRY:true}) : await worker.fetch(request, requestEnv));
+    if(url.pathname==='/mini/api'){
+      let status=502,security='';try{const body=await response.clone().json();if(Number.isInteger(body.status)&&body.status>=100&&body.status<=599)status=body.status;if(['PASSWORD_LOCKED','PASSWORD_COOLDOWN','CAPTCHA_REJECTED'].includes(body.body?.code))security=body.body.code}catch{}
+      await recordRequest(request,{status,headers:new Headers({'X-FR-Security':security})},requestEnv,started);
+    }
     const headers = Object.fromEntries(response.headers);
     if(proto==='https') headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
     res.writeHead(response.status,headers);
     res.end(Buffer.from(await response.arrayBuffer()));
   }catch(e){
-    console.error(e);
+    console.error('LOCAL_REQUEST_FAILED');
     if(!res.headersSent) res.writeHead(500);
     res.end('Local server error');
   }
 });
 server.on('error',e=>{
   if(e.code==='EADDRINUSE') console.error(`端口 ${port} 已占用，请打开已运行的工作台。`);
-  else console.error(e);
+  else console.error('LOCAL_LISTENER_FAILED');
   process.exitCode=1;
 });
 server.listen(port,host,()=>{

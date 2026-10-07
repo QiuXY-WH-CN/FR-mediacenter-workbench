@@ -33,7 +33,7 @@
 
       <view wx:if="{{mode !== 'reset'}}" class="field">
         <text user-select="{{false}}" selectable="{{false}}" class="label">{{ui.s37}}</text>
-        <input value="{{username}}" data-key="username" bindinput="input" maxlength="32" placeholder="3—32 位英文、数字或 . _ -"/>
+        <input value="{{username}}" data-key="username" bindinput="input" bindblur="usernameBlur" maxlength="32" placeholder="3—32 位英文、数字或 . _ -"/>
       </view>
 
       <block wx:if="{{mode === 'register' || mode === 'setup'}}">
@@ -69,7 +69,13 @@
         <input password value="{{confirm}}" data-key="confirm" bindinput="input" maxlength="72" placeholder="{{ui.s298}}"/>
       </view>
 
-      <button class="primary submit" loading="{{busy}}" disabled="{{busy}}" bindtap="submit">{{submitText}}</button>
+      <view wx:if="{{mode === 'login' && captchaRequired && !passwordLocked}}" class="field">
+        <text class="label">{{language === 'en' ? 'Verification code' : '验证码'}}</text>
+        <view class="captcha-row"><input value="{{captchaAnswer}}" data-key="captchaAnswer" bindinput="input" maxlength="5" placeholder="{{language === 'en' ? '5 characters' : '5 位验证码'}}"/><image src="{{captchaImage}}" class="captcha-image" mode="aspectFit" bindtap="refreshCaptcha"/></view>
+        <button class="text-btn" bindtap="refreshCaptcha">{{language === 'en' ? 'Refresh verification code' : '更换验证码'}}</button>
+      </view>
+      <view wx:if="{{mode === 'login' && securityHint}}" class="hint">{{securityHint}}</view>
+      <button class="primary submit" loading="{{busy}}" disabled="{{busy || (mode === 'login' && (cooldown > 0 || passwordLocked))}}" bindtap="submit">{{cooldown > 0 && mode === 'login' ? cooldown + ' s' : submitText}}</button>
 
       <view class="auth-switch">
         <button wx:if="{{mode === 'login' || mode === 'register'}}" class="text-btn" data-mode="{{mode === 'login' ? 'register' : 'login'}}" bindtap="switchMode">{{mode === 'login' ? ui.s295 : ui.s296}}</button>
