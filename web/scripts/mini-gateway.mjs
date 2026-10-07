@@ -2,11 +2,12 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypt
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {guard} from '../src/login-security.js';
+import {reviewEnabled} from '../src/review-mode.js';
 
 const DAY = 86400000;
 const GET_PATHS = new Set(['info', 'state', 'members', 'stats']);
 const POST_PATHS = new Set([
-  'setup', 'login', 'captcha', 'register', 'recover', 'logout', 'password',
+  'setup', 'login', 'captcha', 'register', 'recover', 'logout', 'password', 'presence',
   'events/create', 'events/update', 'events/reschedule',
   'tasks/create', 'tasks/action', 'templates/save',
   'members/update', 'invite', 'reset-link', 'profile/request', 'profile/review', 'settings/save', 'account/request', 'account/cancel', 'account/review', 'stats/maintenance'
@@ -110,10 +111,16 @@ function verifyCloud(headers, rawBody, bridge, nonceStore) {
 }
 
 async function handleWechat(path, payload, identity, token, db) {
+  if(await reviewEnabled(db)){
+    const owner=userForToken(db,token);
+    if(path==='wechat/status'&&owner?.owner&&owner.status==='active')return json(200,{bound:false});
+    return json(403,{error:'审核期间仅支持初始管理员通过账号密码登录，微信绑定暂时封存'});
+  }
   if (path === 'wechat/login') {
     if (!identity) return json(403, { error: '微信登录仅支持云函数通道' });
     const user = userForIdentity(db, identity);
     if (!user) return json(403, { error: '当前微信尚未绑定学媒账号，请先使用账号密码登录后在“我的”中绑定' });
+    if (await reviewEnabled(db) && !user.owner) return json(403, { error: '账号审核封存中，仅初始管理员可登录' });
     if (user.status !== 'active') return json(403, { error: user.status === 'pending' ? '账号等待负责人审核' : '账号已停用' });
     if ((await guard(db, user.username)).locked) return json(423, { error: '密码错误已达 10 次，请联系管理员重置密码。', code: 'PASSWORD_LOCKED', locked: true });
     return json(200, { ok: true }, { sessionToken: createMiniSession(db, user.id) });
@@ -122,6 +129,7 @@ async function handleWechat(path, payload, identity, token, db) {
   if (!token) return json(401, { error: '请先登录' });
   const user = userForToken(db, token);
   if (!user) return json(401, { error: '登录已过期，请重新登录' });
+  if (await reviewEnabled(db) && !user.owner) return json(401, { error: '账号审核封存中，请重新登录' });
   if (user.status !== 'active') return json(403, { error: user.status === 'pending' ? '账号等待负责人审核' : '账号已停用' });
 
   if (path === 'wechat/status') {

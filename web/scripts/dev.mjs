@@ -8,6 +8,7 @@ import {database} from './local-db.mjs';
 import worker from '../dist/server/index.js';
 import {createMiniGateway} from './mini-gateway.mjs';
 import {rollbackGate} from './rollback-gate.mjs';
+import {reviewEnabled} from '../src/review-mode.js';
 
 const lan = process.argv.includes('--lan') || process.env.HOST === '0.0.0.0';
 const port = Number(process.env.PORT || 8766);
@@ -36,7 +37,8 @@ const server = http.createServer(async(req,res)=>{
     const peer=req.socket.remoteAddress||'',forwarded=String(req.headers['cf-connecting-ip']||''),loopback=['127.0.0.1','::1','::ffff:127.0.0.1'].includes(peer);
     const edgeForwarded=!lan&&loopback&&/^[a-f0-9]{16}-[a-z0-9]{3,8}$/i.test(String(req.headers['cf-ray']||''))&&isIP(forwarded)>0;
     const requestEnv={...env,TELEMETRY_CONTEXT:{source:edgeForwarded?'cloudflare':'unknown',ip:edgeForwarded?forwarded:peer,country:edgeForwarded?String(req.headers['cf-ipcountry']||''):''}};
-    const response = await rollbackGate(request,process.env.WORKBENCH_ROLLBACK_READONLY==='1') || (url.pathname === '/mini/api' ? await mini(request, {...requestEnv,DISABLE_TELEMETRY:true}) : await worker.fetch(request, requestEnv));
+    const readOnly=process.env.WORKBENCH_ROLLBACK_READONLY==='1';
+    const response = await rollbackGate(request,readOnly,readOnly&&await reviewEnabled(DB)) || (url.pathname === '/mini/api' ? await mini(request, {...requestEnv,DISABLE_TELEMETRY:true}) : await worker.fetch(request, requestEnv));
     if(url.pathname==='/mini/api'){
       let status=502,security='';try{const body=await response.clone().json();if(Number.isInteger(body.status)&&body.status>=100&&body.status<=599)status=body.status;if(['PASSWORD_LOCKED','PASSWORD_COOLDOWN','CAPTCHA_REJECTED'].includes(body.body?.code))security=body.body.code}catch{}
       await recordRequest(request,{status,headers:new Headers({'X-FR-Security':security})},requestEnv,started);

@@ -96,7 +96,7 @@ const sopLogin=await miniCall('login',{username:'owner',password});
 const docs=await miniCall('sop',{},sopLogin.sessionToken);
 assert.ok(Array.isArray(docs.body)&&docs.body.length>0,'sop should return documents');
 const guide=docs.body.find(d=>d.path==='工作台操作手册.md');
-assert.equal(guide.images.length,6);
+assert.equal(guide.images.length,8);
 for(const img of guide.images){const response=await worker.fetch(new Request('https://local.test'+img.url),{DB});assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/png');}
 
 console.log('PASS: mini gateway sessions, logout, cross-device sync, cloud WeChat identity, health and SOP.');

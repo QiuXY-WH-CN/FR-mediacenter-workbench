@@ -18,6 +18,7 @@ assets['/style.css'].body+='\n'+await readFile('src/organization-v105.css','utf8
 assets['/app.js'].body+='\n'+await readFile('src/login-v105.js','utf8');
 assets['/style.css'].body+='\n'+await readFile('src/login-v105.css','utf8');
 assets['/app.js'].body+='\n'+await readFile('src/avatar-v105.js','utf8')+'\n'+await readFile('src/tasks-v105.js','utf8');
+assets['/app.js'].body+='\n'+await readFile('src/presence-v105.js','utf8');
 assets['/style.css'].body+='\n'+await readFile('src/avatar-v105.css','utf8')+'\n'+await readFile('src/tasks-v105.css','utf8');
 assets['/style.css'].body=assets['/style.css'].body.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g,(_,px)=>`font-size:calc(${px}px * var(--font-scale,1))`);
 assets['/index.html'].body=assets['/index.html'].body.replace(/<link rel="icon"[^>]*>/,'<link rel="icon" type="image/png" href="/brand/emblem.png">').replace('#183e36','#ff861b');

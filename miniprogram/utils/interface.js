@@ -17,6 +17,8 @@ function install(page){
  page.setData({...page.data,themeStyle:style(settings),fontScale:fontScale(settings),motion:settings.motion,particleTheme:settings.themeColor,particles:settings.particles,particleStyle:settings.particles,particleDensity:settings.particleDensity,particleSystem:settings.particleSystem,rotationMinutes:settings.rotationMinutes,dark:settings.appearance==='dark'||settings.appearance==='auto'&&systemTheme==='dark'});
 }
 function navigation(page,s){
+ // Hidden tab subscriptions may update their cards, but only the visible page owns native chrome.
+ if(typeof getCurrentPages==='function'){try{const pages=getCurrentPages();if(pages.length&&pages[pages.length-1]!==page)return}catch{R.capture(null,'render');return}}
  const settings=R.normalizeSettings(s.settings),lang=settings.language;R.safeWrite('fr.language',lang);R.saveDisplay(settings);
  const dark=s.dark,bg=dark?'#101010':'#ffffff',titles={home:'工作概览',tasks:'我的任务',events:'所有任务',calendar:'日历安排',members:'成员与权限',templates:'流程模板',sop:'知识库',profile:'个人中心',rewards:'成果与贡献',editor:'设置',task:'任务',event:'活动',security:lang==='en'?'Local Safety Center':'本机安全中心'};const name=page.route?.split('/')[1];
  if(titles[name])safeNative(()=>wx.setNavigationBarTitle?.({title:I.translate(titles[name],lang)+(s._localReadOnly?(lang==='en'?' · Read only':' · 只读'):'')}));

@@ -29,6 +29,7 @@
 
     <block wx:else>
       <view wx:if="{{message}}" class="hint">{{message}}</view>
+      <view wx:if="{{reviewMode && mode === 'login'}}" class="hint login-review">{{language === 'en' ? 'Accounts are temporarily sealed for review. Only the initial administrator can sign in.' : '账号审核封存中，仅初始管理员可登录。'}}</view>
       <view wx:if="{{error}}" class="error">{{error}}</view>
 
       <view wx:if="{{mode !== 'reset'}}" class="field">
@@ -75,10 +76,15 @@
         <button class="text-btn" bindtap="refreshCaptcha">{{language === 'en' ? 'Refresh verification code' : '更换验证码'}}</button>
       </view>
       <view wx:if="{{mode === 'login' && securityHint}}" class="hint">{{securityHint}}</view>
+      <view wx:if="{{mode === 'login'}}" class="login-memory">
+        <checkbox-group bindchange="rememberChange"><label class="remember-label"><checkbox value="remember" checked="{{remember}}" disabled="{{busy}}" color="{{particleTheme}}"/><text>{{reviewMode ? (language === 'en' ? 'Keep me signed in' : '保持登录') : (language === 'en' ? 'Remember account & password' : '记住账号密码')}}</text></label></checkbox-group>
+        <view class="remember-note">{{reviewMode ? (language === 'en' ? 'Review mode keeps your session for 30 days without remembering your account or password.' : '审核模式仅保持登录 30 天，不记住账号密码。') : (secureMemory ? (language === 'en' ? 'The platform encrypts your password. Stay signed in for 30 days on this device.' : '密码由平台加密保存，在此设备保持登录 30 天。') : (language === 'en' ? 'Remember your account and sign-in for 30 days. This device does not store passwords.' : '此设备仅记住账号并保持登录 30 天，不保存密码。'))}}</view>
+        <button wx:if="{{remember && !reviewMode}}" class="text-btn remember-forget" disabled="{{busy}}" bindtap="forgetRemembered">{{language === 'en' ? 'Forget remembered account' : '清除已记住的信息'}}</button>
+      </view>
       <button class="primary submit" loading="{{busy}}" disabled="{{busy || (mode === 'login' && (cooldown > 0 || passwordLocked))}}" bindtap="submit">{{cooldown > 0 && mode === 'login' ? cooldown + ' s' : submitText}}</button>
 
       <view class="auth-switch">
-        <button wx:if="{{mode === 'login' || mode === 'register'}}" class="text-btn" data-mode="{{mode === 'login' ? 'register' : 'login'}}" bindtap="switchMode">{{mode === 'login' ? ui.s295 : ui.s296}}</button>
+        <button wx:if="{{!reviewMode && (mode === 'login' || mode === 'register')}}" class="text-btn" data-mode="{{mode === 'login' ? 'register' : 'login'}}" bindtap="switchMode">{{mode === 'login' ? ui.s295 : ui.s296}}</button>
         <button wx:if="{{mode === 'login'}}" class="text-btn" data-mode="reset" bindtap="switchMode">{{ui.s318}}</button>
       </view>
 

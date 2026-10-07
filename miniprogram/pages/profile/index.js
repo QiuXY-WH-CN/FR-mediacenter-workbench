@@ -6,6 +6,7 @@ Page(V.page({
   renderState(s) {
     this.setData({
       user: s.user,
+      onlineLabel: s.settings?.language==='en'?(s.user.online?'Online':'Offline'):(s.user.online?'在线':'离线'),
       role: s.roleLabel,
       departmentLabel: UI.t(s.user.dept||'无部门'),
       manager: s.manager,
@@ -42,6 +43,7 @@ Page(V.page({
     });
   },
   async switchAccount() {
+    require('../../utils/login-memory').switchAccount();
     await this.logout();
   }
 }));

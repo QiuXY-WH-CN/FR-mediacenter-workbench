@@ -14,4 +14,5 @@
 .text-btn { background: none; border: 0; color: #b04b05; padding: 16rpx 8rpx; font-size: 28rpx; text-align: left; }
 .auth-note { margin-top: 24rpx; font-size: 24rpx; color: #9a9188; }
 .auth-foot { text-align: center; margin-top: 30rpx; }
+.login-memory{margin-top:24rpx}.remember-label{display:flex;align-items:center;gap:12rpx;min-height:88rpx;font-size:28rpx;line-height:1.5}.remember-label checkbox{flex-shrink:0}.remember-note{font-size:24rpx;line-height:1.6;color:var(--muted,#777);padding-left:60rpx}.remember-forget{font-size:24rpx;margin:4rpx 0 0;padding:12rpx 0 0 60rpx;min-height:60rpx}.font-large .remember-note{padding-left:0}.font-large .remember-forget{padding-left:0}
 .captcha-row{display:flex;align-items:center;gap:16rpx}.captcha-row input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:3rpx}.captcha-image{width:270rpx;height:96rpx;background:#f8f8f8;border-radius:16rpx;flex-shrink:0}

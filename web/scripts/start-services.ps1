@@ -119,6 +119,18 @@ function Confirm-WorkbenchDeployment {
     }
 }
 
+function Stop-WorkbenchOrigin {
+    param([Parameter(Mandatory = $true)][string]$WebRoot, [int]$Port = 8766, [int]$ExpectedProcessId = 0)
+    $webPath = (Resolve-Path -LiteralPath $WebRoot -ErrorAction Stop).Path
+    $nodePath = Get-WorkbenchNode
+    foreach ($processId in @(Get-WorkbenchListeners -Port $Port)) {
+        $owner = Get-CimInstance Win32_Process -Filter ("ProcessId=" + $processId) -ErrorAction Stop
+        if (-not (Test-WorkbenchProcess -Process $owner -WebRoot $webPath -NodePath $nodePath -ExpectedProcessId $ExpectedProcessId)) { throw '端口由未确认的进程占用，已取消暂停。' }
+        Stop-Process -Id $processId -ErrorAction Stop
+    }
+    if (@(Get-WorkbenchListeners -Port $Port).Count -gt 0) { throw '源服务尚未完全停止，请稍后再试。' }
+}
+
 function Start-WorkbenchOrigin {
     [CmdletBinding()]
     param([string]$WebRoot, [int]$Port = 8766, [switch]$Restart, [int]$ExpectedProcessId = 0, [string]$RestoreBundlePath = '')

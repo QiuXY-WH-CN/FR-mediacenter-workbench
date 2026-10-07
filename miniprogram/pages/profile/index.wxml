@@ -6,7 +6,7 @@
  <view class="profile-identity card" data-url="/pages/profile/settings" bindtap="go">
   <image wx:if="{{user.avatar}}" class="profile-avatar" src="{{user.avatar}}" mode="aspectFill"/>
   <view wx:else class="profile-placeholder">{{user.name}}</view>
-  <view class="grow"><view class="title">{{user.name}}</view><view class="muted small">@{{user.username}}</view><view class="profile-affiliation"><view class="profile-department">{{departmentLabel}}</view><view class="profile-role">{{role}}</view></view><view class="link small">{{profileLabel}} ›</view></view>
+  <view class="grow"><view class="title">{{user.name}}</view><view class="muted small">@{{user.username}} · {{onlineLabel}}</view><view class="profile-affiliation"><view class="profile-department">{{departmentLabel}}</view><view class="profile-role">{{role}}</view></view><view class="link small">{{profileLabel}} ›</view></view>
  </view>
  <view wx:if="{{syncError}}" class="error">{{syncError}}</view>
  <view class="card profile-points" data-url="/pages/rewards/index" bindtap="go"><view><view class="muted">{{ui.s135}}</view><view class="points">{{points || 0}}</view></view><text user-select="{{false}}" selectable="{{false}}" class="link">{{ui.s395}}</text></view>

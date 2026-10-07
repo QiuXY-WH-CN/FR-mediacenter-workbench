@@ -1,4 +1,5 @@
 // Bounded, anonymous request telemetry. No bodies, cookies, user IDs or raw IPs.
+import {reviewEnabled} from './review-mode.js';
 const DAY=86400000,RETENTION_DAYS=14,MAX_LOGS=1200,MAX_VISITORS=6000;
 const initialized=new WeakMap(),cleanupAt=new WeakMap();
 const securityCodes=new Set(['PASSWORD_LOCKED','PASSWORD_COOLDOWN','CAPTCHA_REJECTED']);
@@ -41,8 +42,8 @@ export async function pruneTelemetry(db,now=Date.now(),force=false){if(!force&&n
  db.prepare('DELETE FROM site_visitors WHERE rowid NOT IN (SELECT rowid FROM site_visitors ORDER BY last_seen DESC LIMIT ?)').bind(MAX_VISITORS)
  ]);cleanupAt.set(db,now)}
 export async function recordRequest(req,res,env,started=Date.now()){
- const db=env?.DB;if(!db||env?.DISABLE_TELEMETRY)return;
- try{const salt=await ensureObservability(db),now=Date.now(),date=new Date(now).toISOString().slice(0,10),{route,code,risk}=classifyRequest(req,res.status,res.headers?.get('X-FR-Security'));if(route==='api:stats'||route==='api:stats/maintenance')return;
+ let db=env?.DB;if(!db||env?.DISABLE_TELEMETRY)return;
+ try{if(new URL(req.url).pathname==='/api/presence'||await reviewEnabled(db))return;const salt=await ensureObservability(db),now=Date.now(),date=new Date(now).toISOString().slice(0,10),{route,code,risk}=classifyRequest(req,res.status,res.headers?.get('X-FR-Security'));if(route==='api:stats'||route==='api:stats/maintenance')return;
  const metadata=env.TELEMETRY_CONTEXT||{},edge=req.cf&&typeof req.cf==='object'?req.cf:null,source=edge?'edge':metadata.source==='cloudflare'?'cloudflare':'unknown';
  const address=anonymousAddress(edge?req.headers.get('cf-connecting-ip'):metadata.ip||''),countryInput=edge?.country||metadata.country||'',country=source!=='unknown'&&/^[A-Z]{2}$/.test(countryInput)&&!['XX','T1'].includes(countryInput)?countryInput:'unknown';
  const fingerprint=await digest(salt+':'+date+':'+(address.normalized||'unknown')),pageview=route==='page'&&req.method==='GET'&&res.status<400?1:0,failed=res.status>=500?1:0,duration=Math.max(0,Math.min(60000,Math.round(now-started)));
