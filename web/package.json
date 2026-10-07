@@ -42,7 +42,7 @@
     "test:mini:login": "node scripts/native-login-test.mjs",
     "test:calendar:departments": "node scripts/cross-department-calendar-test.mjs",
     "test:tasks:race": "node scripts/task-account-race-test.mjs",
-    "test:review": "node scripts/presence-review-test.mjs",
+    "test:review": "node scripts/presence-review-test.mjs && node scripts/review-native-login-test.mjs",
     "test:login:memory": "node scripts/login-memory-test.mjs",
     "test:presence": "node scripts/presence-ui-test.mjs",
     "review:status": "node scripts/account-review.mjs status",

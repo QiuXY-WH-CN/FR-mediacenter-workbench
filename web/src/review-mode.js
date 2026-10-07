@@ -16,7 +16,21 @@ export function reviewScopedDB(db){if(db.reviewMode)return db;return {rawDB:db,r
  });return db.prepare(scoped)},batch:statements=>db.batch(statements)}}
 // Public aliases never replace the credentials used to authenticate the administrator.
 export function reviewPublicData(value,owner){
- const aliases=new Map();for(const [key,value] of [[owner.id,'review-admin'],[owner.username,'review_admin'],[owner.name,'审核管理员']])if(key&&!aliases.has(key))aliases.set(key,value);
- function visit(item,key){if(typeof item==='string'){if(key==='username'&&item===owner.username)return 'review_admin';if(key==='name'&&item===owner.name)return '审核管理员';return aliases.get(item)??item}if(Array.isArray(item))return item.map(x=>visit(x));if(item&&typeof item==='object')return Object.fromEntries(Object.entries(item).map(([key,val])=>[key,visit(val,key)]));return item}
+ const identityKeys=new Set(['id','user','user_id','createdBy','owner','owner_id','receiver','reviewer_id','owners','receivers','reviewers','target','submittedBy','archivedBy','approvedBy']);
+ // Identity values can equal role/status/theme enums. Redact only typed identity fields.
+ function visit(item,key,identityRecord=false){
+  if(typeof item==='string'){
+   if(identityKeys.has(key)&&item===owner.id)return 'review-admin';
+   if(key==='username'&&identityRecord)return 'review_admin';
+   if(key==='name'&&identityRecord)return '审核管理员';
+   return item;
+  }
+  if(Array.isArray(item))return item.map(x=>visit(x,key));
+  if(item&&typeof item==='object'){
+   const isOwner=item.id===owner.id||item.user===owner.id||item.user_id===owner.id;
+   return Object.fromEntries(Object.entries(item).map(([field,val])=>[field,visit(val,field,isOwner)]));
+  }
+  return item;
+ }
  return visit(value);
 }
