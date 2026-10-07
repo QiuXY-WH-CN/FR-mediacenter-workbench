@@ -1,17 +1,26 @@
 import bcrypt from 'bcryptjs';
-export const defaults={workspace:'',themeColor:'#e77b24',appearance:'light',particles:'constellation',particleDensity:48,rotationMinutes:5,motion:true,respectSystemMotion:false,compact:false,language:'zh-CN'};
+import ParticleEngine from '../../miniprogram/utils/particle-engine.js';
+export const defaults={workspace:'',themeColor:'#e77b24',appearance:'light',particles:'constellation',particleDensity:48,rotationMinutes:5,motion:true,language:'zh-CN',fontScale:1,particleSystem:{...ParticleEngine.defaults}};
 export async function ensurePreferences(db){
  await db.prepare("CREATE TABLE IF NOT EXISTS member_preferences (user TEXT PRIMARY KEY,data TEXT NOT NULL)").run();
  await db.prepare("CREATE TABLE IF NOT EXISTS account_requests (user TEXT PRIMARY KEY,reason TEXT NOT NULL,status TEXT NOT NULL,requested INTEGER NOT NULL,revision INTEGER NOT NULL,review_note TEXT NOT NULL DEFAULT '')").run();
 }
-export async function readPreferences(db,u){const row=await db.prepare('SELECT data FROM member_preferences WHERE user=?').bind(u.id).first();return {...defaults,...(row?JSON.parse(row.data):{})}}
+export async function readPreferences(db,u){const row=await db.prepare('SELECT data FROM member_preferences WHERE user=?').bind(u.id).first();const stored=row?JSON.parse(row.data):{};return {...Object.fromEntries(Object.keys(defaults).map(k=>[k,stored[k]??defaults[k]])),particleSystem:ParticleEngine.normalize(stored.particleSystem||{}),fontScale:Number.isFinite(stored.fontScale)?Math.max(.85,Math.min(1.35,stored.fontScale)):1}}
 export async function preferenceRoutes(path,b,u,db,{fail,text,departments}){
  if(path==='/api/settings/save'){
   const old=await readPreferences(db,u),next={...old,...b};
   if(!departments.includes(next.workspace)&&next.workspace!=='')fail(400,'请选择有效的部门模式');
-  if(!['zh-CN','en'].includes(next.language)||typeof next.respectSystemMotion!=='boolean')fail(400,'语言或动态偏好无效');
-  if(!/^#[a-fA-F0-9]{6}$/.test(next.themeColor)||!['light','dark','auto'].includes(next.appearance)||!['off','constellation','fireflies','snow','petals','rain','orbits','stars','bubbles','random','rotate'].includes(next.particles))fail(400,'外观设置无效');
-  if(!Number.isInteger(next.particleDensity)||next.particleDensity<10||next.particleDensity>80||!Number.isInteger(next.rotationMinutes)||next.rotationMinutes<1||next.rotationMinutes>60||typeof next.motion!=='boolean'||typeof next.compact!=='boolean')fail(400,'动画设置无效');
+  if(!['zh-CN','en'].includes(next.language))fail(400,'语言无效');
+  if(typeof next.themeColor!=='string'||!/^#[a-fA-F0-9]{6}$/.test(next.themeColor)||!['light','dark','auto'].includes(next.appearance)||!['off','constellation','fireflies','snow','petals','rain','orbits','stars','bubbles','random','rotate'].includes(next.particles))fail(400,'外观设置无效');
+  if(!Number.isInteger(next.particleDensity)||next.particleDensity<10||next.particleDensity>80||!Number.isInteger(next.rotationMinutes)||next.rotationMinutes<1||next.rotationMinutes>60||typeof next.motion!=='boolean')fail(400,'动画设置无效');
+  if(!Number.isFinite(next.fontScale)||next.fontScale<.85||next.fontScale>1.35)fail(400,'字号须在 85%—135% 之间');
+  if(b.particleSystem!==undefined&&(!b.particleSystem||typeof b.particleSystem!=='object'||Array.isArray(b.particleSystem)))fail(400,'粒子设置无效');
+  const system={...old.particleSystem,...(b.particleSystem||{})};
+  for(const [k,r]of Object.entries(ParticleEngine.rules)){
+   const v=system[k];
+   if(r.min!==undefined&&(!Number.isFinite(v)||v<r.min||v>r.max)||r.values&&!r.values.includes(v)||r.type==='boolean'&&typeof v!=='boolean'||r.type==='color'&&(typeof v!=='string'||!/^#[a-fA-F0-9]{6}$/.test(v)))fail(400,'粒子参数超出范围或格式无效');
+  }
+  next.particleSystem=ParticleEngine.normalize(system);
   const data=Object.fromEntries(Object.keys(defaults).map(k=>[k,next[k]]));
   await db.prepare('INSERT INTO member_preferences (user,data) VALUES (?,?) ON CONFLICT(user) DO UPDATE SET data=excluded.data').bind(u.id,JSON.stringify(data)).run();return {ok:true,settings:data};
  }

@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "任务交付",
-  "usingComponents": {}
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
 }

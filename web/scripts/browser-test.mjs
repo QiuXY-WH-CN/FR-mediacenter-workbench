@@ -43,8 +43,8 @@ try{
   await page.getByRole('button',{name:'提交给 测试负责人'}).click();await page.locator('dialog').waitFor({state:'hidden'});
   await page.locator('.flow-step').first().click();await page.getByRole('button',{name:'验收通过'}).click();await page.locator('dialog').waitFor({state:'hidden'});
   await page.locator('[data-view=rewards]').first().click();await page.getByText('+20',{exact:true}).waitFor();
-  await page.locator('[data-view=activities]').click();await page.getByRole('button',{name:'活动详情',exact:true}).click();await page.getByRole('button',{name:'保存为模板'}).click();await page.getByRole('button',{name:'保存模板',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});
-  await page.locator('[data-view=templates]').click();await page.getByRole('heading',{name:'迎新宣传协作流程'}).waitFor();
+  await page.locator('nav [data-view=activities]').click();await page.getByRole('button',{name:'活动详情',exact:true}).click();await page.getByRole('button',{name:'保存为模板'}).click();await page.getByRole('button',{name:'保存模板',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});
+  await page.locator('nav [data-view=templates]').click();await page.getByRole('heading',{name:'迎新宣传协作流程'}).waitFor();
   await page.getByRole('button',{name:'＋ 创建模板'}).click();await page.locator('[name=name]').fill('新建模板测试');await page.locator('[data-add-step]').click();await page.locator('[data-key=name]').fill('需求登记');await page.locator('[data-key=requirements]').fill('登记需求方与交付形式');await page.getByRole('button',{name:'保存模板',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});
   await page.locator('.template-card').filter({has:page.getByRole('heading',{name:'新建模板测试'})}).getByRole('button',{name:'使用模板'}).click();
   await page.locator('[name=name]').fill('从模板创建的活动');await page.getByRole('button',{name:'创建活动',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});
@@ -55,7 +55,7 @@ try{
   await page.getByRole('heading',{name:'确认活动改期'}).waitFor();await page.getByRole('button',{name:'确认并同步日历'}).click();await page.locator('dialog').waitFor({state:'hidden'});
   await page.screenshot({path:'.local/qa/desktop-overview.png',fullPage:true});
   await page.locator('[data-view=calendar]').first().click();await page.screenshot({path:'.local/qa/desktop-calendar.png',fullPage:true});
-  await page.locator('[data-view=sop]').click();await page.locator('.sop-document').first().waitFor();await page.locator('.sop-document').first().click();await page.locator('.sop-reader').waitFor();await page.locator('[data-close]').click();
+  await page.locator('nav [data-view=sop]').click();await page.locator('.sop-document').first().waitFor();await page.locator('.sop-document').first().click();await page.locator('.sop-reader').waitFor();await page.locator('[data-close]').click();
   const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,storageState:await context.storageState()});
   const phone=await mobile.newPage();phone.on('pageerror',e=>errors.push(e.message));await phone.goto(base);await phone.getByRole('heading',{name:'测试负责人，欢迎回来。'}).waitFor();
   await phone.screenshot({path:'.local/qa/mobile-overview.png',fullPage:true});

@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "贡献积分",
-  "usingComponents": {}
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
 }

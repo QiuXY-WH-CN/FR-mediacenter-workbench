@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "知识库",
-  "usingComponents": {}
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
 }

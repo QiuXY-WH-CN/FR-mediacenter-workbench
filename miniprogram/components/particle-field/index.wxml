@@ -1,0 +1,1 @@
+<canvas wx:if="{{enabled}}" id="particle-canvas" type="2d" class="particle-canvas" aria-hidden="true"/>

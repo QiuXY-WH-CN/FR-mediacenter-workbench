@@ -1,1 +1,6 @@
-{"navigationBarTitleText":"个人资料"}
+{
+  "navigationBarTitleText": "个人资料",
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
+}

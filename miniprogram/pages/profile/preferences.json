@@ -1,1 +1,6 @@
-{"navigationBarTitleText":"通用设置"}
+{
+  "navigationBarTitleText": "通用设置",
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
+}

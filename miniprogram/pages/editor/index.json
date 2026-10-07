@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "编辑",
-  "usingComponents": {}
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
 }

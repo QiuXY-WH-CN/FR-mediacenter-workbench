@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "成员管理",
-  "usingComponents": {}
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
 }

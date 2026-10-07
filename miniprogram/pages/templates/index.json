@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "流程模板",
-  "usingComponents": {}
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
 }

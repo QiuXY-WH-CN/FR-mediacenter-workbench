@@ -1,9 +1,9 @@
 <include src="../../templates/share-preview.wxml"/>
 <block wx:if="{{!sharePreview}}">
-<view class="page auth-page"><view wx:if="{{ambientDots.length}}" class="ambient-particles {{particleStyle}}"><view wx:for="{{ambientDots}}" wx:key="id" class="ambient-dot {{item.edge ? 'edge-dot edge-' + item.side : 'center-dot'}}" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.delay}}s;opacity:{{item.opacity || 1}};"/></view>
+<view class="page auth-page {{fontScale > 1.12 ? 'font-large' : ''}} {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}}" style="{{themeStyle}}" bindtouchstart="particleTouchStart" bindtouchmove="particleTouchMove" bindtouchend="particleTouchEnd" bindtouchcancel="particleTouchEnd"><particle-field id="particle-field" enabled="{{motion && particles !== 'off'}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/>
   <view class="brand auth-brand">
     <image class="mark" src="/images/emblem.png" mode="aspectFit"/>
-    <view class="auth-title">{{ui.s14}}<br/>{{ui.s15}}</view>
+    <view class="auth-title">冯如学媒<br/>{{ui.s15}}</view>
     <view class="auth-sub">{{ui.s313}}</view>
     <view class="auth-features">{{ui.s314}}</view>
   </view>
@@ -32,17 +32,17 @@
       <view wx:if="{{error}}" class="error">{{error}}</view>
 
       <view wx:if="{{mode !== 'reset'}}" class="field">
-        <text class="label">{{ui.s37}}</text>
+        <text user-select="{{false}}" selectable="{{false}}" class="label">{{ui.s37}}</text>
         <input value="{{username}}" data-key="username" bindinput="input" maxlength="32" placeholder="3—32 位英文、数字或 . _ -"/>
       </view>
 
       <block wx:if="{{mode === 'register' || mode === 'setup'}}">
         <view class="field">
-          <text class="label">{{ui.s35}}</text>
+          <text user-select="{{false}}" selectable="{{false}}" class="label">{{ui.s35}}</text>
           <input value="{{name}}" data-key="name" bindinput="input" maxlength="30" placeholder="用于任务分配与署名"/>
         </view>
         <view class="field">
-          <text class="label">{{ui.s23}}</text>
+          <text user-select="{{false}}" selectable="{{false}}" class="label">{{ui.s23}}</text>
           <picker range="{{deptLabels}}" value="{{deptIndex}}" bindchange="dept">
             <view class="picker">{{deptLabels[deptIndex]}}</view>
           </picker>
@@ -50,22 +50,22 @@
       </block>
 
       <view wx:if="{{mode === 'register'}}" class="field">
-        <text class="label">{{ui.s297}}</text>
+        <text user-select="{{false}}" selectable="{{false}}" class="label">{{ui.s297}}</text>
         <input value="{{invite}}" data-key="invite" bindinput="input" maxlength="128" placeholder="没有邀请码也可提交申请"/>
       </view>
 
       <view wx:if="{{mode === 'reset'}}" class="field">
-        <text class="label">{{ui.s317}}</text>
+        <text user-select="{{false}}" selectable="{{false}}" class="label">{{ui.s317}}</text>
         <input value="{{resetToken}}" data-key="resetToken" bindinput="input" maxlength="128" placeholder="粘贴重置链接中的重置码"/>
       </view>
 
       <view class="field">
-        <text class="label">{{mode === 'reset' ? ui.s41 : ui.s39}}</text>
+        <text user-select="{{false}}" selectable="{{false}}" class="label">{{mode === 'reset' ? ui.s41 : ui.s39}}</text>
         <input password value="{{password}}" data-key="password" bindinput="input" maxlength="72" placeholder="{{mode === 'login' ? '请输入密码' : '至少 10 个字符'}}"/>
       </view>
 
       <view wx:if="{{mode !== 'login'}}" class="field">
-        <text class="label">{{ui.s298}}</text>
+        <text user-select="{{false}}" selectable="{{false}}" class="label">{{ui.s298}}</text>
         <input password value="{{confirm}}" data-key="confirm" bindinput="input" maxlength="72" placeholder="{{ui.s298}}"/>
       </view>
 
@@ -81,7 +81,7 @@
   </view>
 
   <view class="auth-foot">
-    <text class="link" bindtap="connection">{{ui.s392}}</text>
+    <text user-select="{{false}}" selectable="{{false}}" class="link" bindtap="connection">{{ui.s392}}</text>
   </view>
 </view>
 </block>

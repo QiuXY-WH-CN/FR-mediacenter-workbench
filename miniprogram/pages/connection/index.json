@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "连接设置",
-  "usingComponents": {}
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index"
+  }
 }

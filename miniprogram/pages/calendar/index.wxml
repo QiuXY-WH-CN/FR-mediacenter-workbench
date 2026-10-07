@@ -2,17 +2,17 @@
   <view class="calendar-child {{task.dueToday ? 'calendar-due-today' : ''}}" data-id="{{task.id}}" bindtap="openTask">
     <view class="calendar-child-dot" style="background:{{task.departmentColor}};"/>
     <view class="grow">
-      <view class="row start"><view class="h3 grow">{{task.name}}</view><text class="priority {{task.priority}}">{{task.priorityLabel}}{{ui.s98}}</text></view>
-      <view class="calendar-task-info"><text>{{task.ownerName}}</text><text class="badge {{task.status}}">{{task.statusLabel}}</text></view>
-      <view class="calendar-due"><text wx:if="{{task.dueToday}}" class="calendar-due-tag">{{calendarLabels.dueToday}}</text><text>{{task.dueLabel}}</text></view>
+      <view class="row start"><view class="h3 grow">{{task.name}}</view><text user-select="{{false}}" selectable="{{false}}" class="priority {{task.priority}}">{{task.priorityLabel}}{{ui.s98}}</text></view>
+      <view class="calendar-task-info"><text user-select="{{false}}" selectable="{{false}}">{{task.ownerName}}</text><text user-select="{{false}}" selectable="{{false}}" class="badge {{task.status}}">{{task.statusLabel}}</text></view>
+      <view class="calendar-due"><text user-select="{{false}}" selectable="{{false}}" wx:if="{{task.dueToday}}" class="calendar-due-tag">{{calendarLabels.dueToday}}</text><text user-select="{{false}}" selectable="{{false}}">{{task.dueLabel}}</text></view>
     </view>
-    <text class="calendar-child-arrow">›</text>
+    <text user-select="{{false}}" selectable="{{false}}" class="calendar-child-arrow">›</text>
   </view>
 </template>
 <include src="../../templates/share-preview.wxml"/>
 <block wx:if="{{!sharePreview}}">
-<view style="{{themeStyle}} --dept-color:{{departmentColor}};" class="page department-calendar {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}} {{compact ? 'compact' : ''}} {{respectReduced ? 'respect-reduced' : ''}}">
-  <view wx:if="{{ambientDots.length}}" class="ambient-particles {{particleStyle}}"><view wx:for="{{ambientDots}}" wx:key="id" class="ambient-dot {{item.edge ? 'edge-dot edge-' + item.side : 'center-dot'}}" style="left:{{item.x}}%;top:{{item.y}}%;animation-delay:{{item.delay}}s;"/></view>
+<view style="{{themeStyle}} --dept-color:{{departmentColor}};" class="page department-calendar {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}} {{fontScale > 1.12 ? 'font-large' : ''}}" bindtouchstart="particleTouchStart" bindtouchmove="particleTouchMove" bindtouchend="particleTouchEnd" bindtouchcancel="particleTouchEnd">
+  <particle-field id="particle-field" enabled="{{motion && particles !== 'off'}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/>
   <view class="title">{{ui.s3}}</view>
   <view wx:if="{{syncError}}" class="error">{{syncError}}</view>
   <view class="calendar-toolbar">
@@ -22,17 +22,17 @@
   <view class="calendar-board">
     <view class="calendar-month row">
       <button class="calendar-arrow" data-delta="-1" bindtap="month" aria-label="{{calendarLabels.previousMonth}}">‹</button>
-      <text class="h2">{{monthLabel}}</text>
+      <text user-select="{{false}}" selectable="{{false}}" class="h2">{{monthLabel}}</text>
       <button class="calendar-arrow" data-delta="1" bindtap="month" aria-label="{{calendarLabels.nextMonth}}">›</button>
     </view>
-    <view class="calendar-summary"><text>{{calendarLabels.monthEvents}} {{monthEventCount}}</text><text>{{calendarLabels.monthTasks}} {{monthTaskCount}}</text></view>
+    <view class="calendar-summary"><text user-select="{{false}}" selectable="{{false}}">{{calendarLabels.monthEvents}} {{monthEventCount}}</text><text user-select="{{false}}" selectable="{{false}}">{{calendarLabels.monthTasks}} {{monthTaskCount}}</text></view>
     <view class="calendar-week"><view wx:for="{{week}}" wx:key="*this">{{item}}</view></view>
     <view class="calendar-grid" bindtouchstart="touchStart" bindtouchend="touchEnd">
       <view wx:for="{{cells}}" wx:key="id" class="calendar-cell {{item.empty ? 'calendar-blank' : ''}} {{selected === item.id ? 'calendar-selected' : ''}} {{item.today ? 'calendar-is-today' : ''}} {{item.urgent ? 'calendar-urgent' : ''}}" data-id="{{item.id}}" bindtap="choose">
         <block wx:if="{{!item.empty}}">
           <view class="calendar-number">{{item.number}}</view>
-          <view class="calendar-count" wx:if="{{item.tasks}}">{{item.tasks}}<text class="calendar-count-dot"/></view>
-          <view class="calendar-event-dots" wx:elif="{{item.events}}"><text/><text wx:if="{{item.events > 1}}"/><text wx:if="{{item.events > 2}}"/></view>
+          <view class="calendar-count" wx:if="{{item.tasks}}">{{item.tasks}}<text user-select="{{false}}" selectable="{{false}}" class="calendar-count-dot"/></view>
+          <view class="calendar-event-dots" wx:elif="{{item.events}}"><text user-select="{{false}}" selectable="{{false}}"/><text user-select="{{false}}" selectable="{{false}}" wx:if="{{item.events > 1}}"/><text user-select="{{false}}" selectable="{{false}}" wx:if="{{item.events > 2}}"/></view>
           <view class="calendar-preview" wx:if="{{item.preview}}">{{item.preview}}</view>
         </block>
       </view>
@@ -47,9 +47,9 @@
   <view class="calendar-project card" wx:for="{{selectedGroups}}" wx:for-item="group" wx:key="id">
     <view class="calendar-project-heading row" data-id="{{group.id}}" bindtap="openCalendarEvent">
       <view class="grow"><view class="h2">{{group.name}}</view><view class="muted small">{{group.dateLabel}}</view></view>
-      <text wx:if="{{group.openable}}" class="calendar-project-arrow">›</text>
+      <text user-select="{{false}}" selectable="{{false}}" wx:if="{{group.openable}}" class="calendar-project-arrow">›</text>
     </view>
-    <view class="calendar-project-summary"><text>{{group.scheduleLabel}}</text><text>{{ui.s11}} {{group.taskCount}}</text></view>
+    <view class="calendar-project-summary"><text user-select="{{false}}" selectable="{{false}}">{{group.scheduleLabel}}</text><text user-select="{{false}}" selectable="{{false}}">{{ui.s11}} {{group.taskCount}}</text></view>
     <block wx:for="{{group.tasks}}" wx:key="id"><template is="calendar-child" data="{{task: item, ui: ui, calendarLabels: calendarLabels}}"/></block>
     <button wx:if="{{group.otherTasks.length}}" class="calendar-expand" data-id="{{group.id}}" bindtap="toggleOthers">{{group.expanded ? calendarLabels.hideOther : calendarLabels.showOther}} · {{group.otherTasks.length}} {{group.expanded ? '⌃' : '⌄'}}</button>
     <block wx:if="{{group.expanded}}"><block wx:for="{{group.otherTasks}}" wx:key="id"><template is="calendar-child" data="{{task: item, ui: ui, calendarLabels: calendarLabels}}"/></block></block>

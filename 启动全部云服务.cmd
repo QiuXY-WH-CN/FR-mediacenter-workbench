@@ -1,3 +1,4 @@
 @echo off
 chcp 65001 >nul
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0启动全部云服务.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0启动全部云服务.ps1" %*
+exit /b %errorlevel%
