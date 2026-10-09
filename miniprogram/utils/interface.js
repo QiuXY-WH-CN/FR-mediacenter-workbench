@@ -1,7 +1,7 @@
 const I=require('./localization'),api=require('../services/api'),R=require('./recovery');
 const language=()=>{const value=api.getState()?.settings?.language||R.safeRead('fr.language','zh-CN');return value==='en'?'en':'zh-CN'};
 function translateData(value,key=''){
- if(typeof value==='string')return /^(label|title|subtitle|submitText|placeholder|display|priorityLabel|statusLabel|roleLabel|role|syncError|error|templateHint|tokenLabel)$/.test(key)?I.translate(value,language()):value;
+ if(typeof value==='string')return /^(label|section|title|subtitle|submitText|placeholder|display|priorityLabel|statusLabel|roleLabel|role|syncError|error|templateHint|tokenLabel)$/.test(key)?I.translate(value,language()):value;
  if(Array.isArray(value))return value.map(v=>translateData(v,key));
  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,(value.kind==='personOption'&&k==='label'||value.containsNames&&k==='display')?v:translateData(v,k)]));return value;
 }
@@ -22,6 +22,6 @@ function navigation(page,s){
  const settings=R.normalizeSettings(s.settings),lang=settings.language;R.safeWrite('fr.language',lang);R.saveDisplay(settings);
  const dark=s.dark,bg=dark?'#101010':'#ffffff',titles={home:'工作概览',tasks:'我的任务',events:'所有任务',calendar:'日历安排',members:'成员与权限',templates:'流程模板',sop:'知识库',profile:'个人中心',rewards:'成果与贡献',editor:'设置',task:'任务',event:'活动',security:lang==='en'?'Local Safety Center':'本机安全中心'};const name=page.route?.split('/')[1];
  if(titles[name])safeNative(()=>wx.setNavigationBarTitle?.({title:I.translate(titles[name],lang)+(s._localReadOnly?(lang==='en'?' · Read only':' · 只读'):'')}));
- safeNative(()=>wx.setNavigationBarColor?.({frontColor:dark?'#ffffff':'#000000',backgroundColor:bg}));safeNative(()=>wx.setBackgroundColor?.({backgroundColor:bg}));safeNative(()=>wx.setTabBarStyle?.({backgroundColor:bg,color:dark?'#b5b5b5':'#707070',selectedColor:settings.themeColor,borderStyle:dark?'black':'white'}));['工作台','任务','日历','我的'].forEach((text,index)=>safeNative(()=>wx.setTabBarItem?.({index,text:I.translate(text,lang)})));
+ safeNative(()=>wx.setNavigationBarColor?.({frontColor:dark?'#ffffff':'#000000',backgroundColor:bg}));safeNative(()=>wx.setBackgroundColor?.({backgroundColor:bg}));safeNative(()=>wx.setTabBarStyle?.({backgroundColor:bg,color:dark?'#b5b5b5':'#707070',selectedColor:settings.themeColor,borderStyle:dark?'black':'white'}));['工作概览','我的任务','日历安排','个人中心'].forEach((text,index)=>safeNative(()=>wx.setTabBarItem?.({index,text:I.translate(text,lang)})));
 }
 module.exports={install,navigation,language,translateData,style,fontScale,pointer,t:s=>I.translate(s,language())};

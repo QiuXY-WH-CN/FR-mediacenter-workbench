@@ -4,14 +4,13 @@
   <view class="brand auth-brand">
     <image class="mark" src="/images/emblem.png" mode="aspectFit"/>
     <view class="auth-title">冯如学媒<br/>{{ui.s15}}</view>
-    <view class="auth-sub">{{ui.s313}}</view>
     <view class="auth-features">{{ui.s314}}</view>
   </view>
 
   <view class="auth-card">
     <view class="eyebrow">FENGRU · MEDIA CENTER</view>
     <view wx:if="{{!pending}}" class="title">{{title}}</view>
-    <view wx:if="{{!pending}}" class="sub">{{subtitle}}</view>
+    <view wx:if="{{!pending && subtitle}}" class="sub">{{subtitle}}</view>
 
     <view wx:if="{{loading}}" class="hint">{{ui.s315}}</view>
 
@@ -79,7 +78,6 @@
       <view wx:if="{{mode === 'login'}}" class="login-memory">
         <checkbox-group bindchange="rememberChange"><label class="remember-label"><checkbox value="remember" checked="{{remember}}" disabled="{{busy}}" color="{{particleTheme}}"/><text>{{reviewMode ? (language === 'en' ? 'Keep me signed in' : '保持登录') : (language === 'en' ? 'Remember account & password' : '记住账号密码')}}</text></label></checkbox-group>
         <view class="remember-note">{{reviewMode ? (language === 'en' ? 'Review mode keeps your session for 30 days without remembering your account or password.' : '审核模式仅保持登录 30 天，不记住账号密码。') : (secureMemory ? (language === 'en' ? 'The platform encrypts your password. Stay signed in for 30 days on this device.' : '密码由平台加密保存，在此设备保持登录 30 天。') : (language === 'en' ? 'Remember your account and sign-in for 30 days. This device does not store passwords.' : '此设备仅记住账号并保持登录 30 天，不保存密码。'))}}</view>
-        <button wx:if="{{remember && !reviewMode}}" class="text-btn remember-forget" disabled="{{busy}}" bindtap="forgetRemembered">{{language === 'en' ? 'Forget remembered account' : '清除已记住的信息'}}</button>
       </view>
       <button class="primary submit" loading="{{busy}}" disabled="{{busy || (mode === 'login' && (cooldown > 0 || passwordLocked))}}" bindtap="submit">{{cooldown > 0 && mode === 'login' ? cooldown + ' s' : submitText}}</button>
 

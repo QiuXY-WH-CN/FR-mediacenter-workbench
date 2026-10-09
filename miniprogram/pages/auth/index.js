@@ -4,9 +4,9 @@ const UI=require('../../utils/interface');
 const LoginMemory=require('../../utils/login-memory');
 
 const COPY = {
-  login: { title: '欢迎回到学媒', subtitle: '使用学媒账号登录。', submit: '登录' },
+  login: { title: '账号登录', subtitle: '', submit: '登录' },
   register: { title: '注册学媒账号', subtitle: '填写信息后提交，由管理员审批开通。', submit: '提交申请' },
-  setup: { title: '创建首位负责人账号', subtitle: '由你保管管理员账号，成员提交注册后由管理员审批，或通过邀请加入。', submit: '创建管理员账号' },
+  setup: { title: '创建首位负责人账号', subtitle: '请妥善保管管理员账号；成员通过注册审核或邀请加入。', submit: '创建管理员账号' },
   reset: { title: '设置新密码', subtitle: '新密码生效后，原有登录会话将失效。', submit: '保存新密码' }
 };
 

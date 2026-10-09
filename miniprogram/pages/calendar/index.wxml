@@ -12,7 +12,7 @@
 <include src="../../templates/share-preview.wxml"/>
 <block wx:if="{{!sharePreview}}">
 <view style="{{themeStyle}} --dept-color:{{departmentColor}};" class="page department-calendar {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}} {{fontScale > 1.12 ? 'font-large' : ''}}" bindtouchstart="particleTouchStart" bindtouchmove="particleTouchMove" bindtouchend="particleTouchEnd" bindtouchcancel="particleTouchEnd">
-  <particle-field id="particle-field" enabled="{{motion && particles !== 'off'}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/>
+  <particle-field id="particle-field" enabled="{{motion && particles !== 'off' && !navigationOpen}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/><workspace-nav bindopenchange="navigationChange" id="workspace-nav" current="calendar" language="{{language}}" dark="{{dark}}" theme="{{particleTheme}}" user="{{currentUser}}"/>
   <view class="title">{{ui.s3}}</view>
   <view wx:if="{{syncError}}" class="error">{{syncError}}</view>
   <view class="calendar-toolbar">

@@ -1,1 +1,8 @@
-{"navigationBarTitleText":"本机安全中心","enablePullDownRefresh":false,"usingComponents":{"particle-field":"/components/particle-field/index"}}
+{
+  "navigationBarTitleText": "本机安全中心",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "particle-field": "/components/particle-field/index",
+    "workspace-nav": "/components/workspace-nav/index"
+  }
+}

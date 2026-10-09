@@ -24,10 +24,156 @@ Object.assign(translations,{
 Object.assign(translations,{'白':'White','黑':'Black','分享小程序':'Share mini program','头像、姓名与账号设置':'Profile & account settings','全部可见部门':'All visible departments'});
 Object.assign(translations,{'共同执行人（可多选）':'Assignees (multiple allowed)','共同验收人（可多选）':'Reviewers (multiple allowed)','任务总积分（共同执行人均分）':'Total task points (shared by assignees)','新的共同执行人':'New assignees','转派给本部门成员':'Reassign to department members','交付核对项（每行一项）':'Delivery checklist (one per line)','任务及固定总积分随新执行人转移，验收人员保持不变。':'The task and fixed total points transfer to the new assignees. Reviewers stay the same.','请求暂未完成，请刷新核对最新状态后再操作。':'Request did not finish. Refresh and review the latest state before trying again.','验证码':'Verification code','归档':'Archive','调整分工与任务':'Edit task & assignment','安全中心':'Safety center'});
 Object.assign(translations,{'无部门':'No department'});
-const pairs=Object.entries(translations).sort((a,b)=>b[0].length-a[0].length);
-function translate(value,language='zh-CN'){if(language!=='en'||typeof value!=='string')return value;if(translations[value])return translations[value];const greeting=value.match(/^(\s*)(.+)，欢迎回来。(\s*)$/);if(greeting)return greeting[1]+'Welcome back, '+greeting[2]+'.'+greeting[3];let text=value;
- text=text.replace(/(.+)，欢迎回来。/g,'Welcome back, $1.').replace(/(\d+) 年 (\d+) 月/g,'$1 / $2').replace(/周([一二三四五六日])/g,(_,d)=>({一:'Mon',二:'Tue',三:'Wed',四:'Thu',五:'Fri',六:'Sat',日:'Sun'}[d])).replace(/(\d+) 位伙伴/g,'$1 teammates').replace(/(\d+) 项高优先级待办/g,'$1 high-priority tasks').replace(/(\d+) 子任务/g,'$1 subtasks').replace(/(\d+) 项任务已验收/g,'$1 tasks reviewed').replace(/(\d+) 项任务/g,'$1 tasks').replace(/(\d+) 场活动/g,'$1 events').replace(/(\d+) 项截止/g,'$1 deadlines').replace(/(\d+) 分/g,'$1 points');
+
+function translate(value,language='zh-CN'){if(typeof value!=='string')return value;const copy=editorial[value];if(copy)return copy[language==='en'?1:0];if(language!=='en')return value;if(translations[value])return translations[value];const greeting=value.match(/^(\s*)(.+)，欢迎回来。(\s*)$/);if(greeting)return greeting[1]+'Welcome back, '+greeting[2]+'.'+greeting[3];let text=value;
+ text=text.replace(/(.+)，欢迎回来。/g,'Welcome back, $1.').replace(/(\d+) 年 (\d+) 月/g,'$1 / $2').replace(/周([一二三四五六日])/g,(_,d)=>({一:'Mon',二:'Tue',三:'Wed',四:'Thu',五:'Fri',六:'Sat',日:'Sun'}[d])).replace(/(\d+) (?:位伙伴|名成员)/g,'$1 members').replace(/(\d+) 项高优先级待办/g,'$1 high-priority tasks').replace(/(\d+) 子任务/g,'$1 subtasks').replace(/(\d+) 项任务已验收/g,'$1 tasks reviewed').replace(/(\d+) 项任务/g,'$1 tasks').replace(/(\d+) 场活动/g,'$1 events').replace(/(\d+) 项截止/g,'$1 deadlines').replace(/(\d+) 分/g,'$1 points');
  for(const [zh,en]of pairs)if(zh.length>=2)text=text.split(zh).join(en);return text;
 }
-const keys=Object.keys(translations),keyFor=s=>'s'+keys.indexOf(s),ui=language=>Object.fromEntries(keys.map((s,i)=>['s'+i,language==='en'?translations[s]:s]));
+Object.assign(translations,{'基本信息':'Basic information','时间安排':'Schedule','详细内容':'Details','优先级与奖励':'Priority & rewards','任务分工':'Assignments'});
+// Existing sID keys stay in place; revised labels are appended for direct lookups.
+const editorial={
+ "欢迎回到学媒": [
+  "账号登录",
+  "Sign in"
+ ],
+ "让每一项任务，有人接、有进度、有交付。": [
+  "任务分工与成果交付",
+  "Assignments & delivery"
+ ],
+ "使用学媒账号登录。": [
+  "",
+  ""
+ ],
+ "由你保管管理员账号，成员提交注册后由管理员审批，或通过邀请加入。": [
+  "请妥善保管管理员账号；成员通过注册审核或邀请加入。",
+  "Keep the administrator account secure. Members join by approval or invitation."
+ ],
+ "确认分工、跟进交付，在同一个工作台里完成。": [
+  "",
+  ""
+ ],
+ "暂无待办。负责人可以先邀请成员，再创建第一场活动。": [
+  "暂无待办任务",
+  "No tasks to do"
+ ],
+ "协作从明确分工开始": [
+  "成员与任务",
+  "Members & tasks"
+ ],
+ "先邀请伙伴，再安排任务": [
+  "邀请与分工",
+  "Invitations & assignments"
+ ],
+ "你的任务会出现在这里": [
+  "任务分配",
+  "Assignments"
+ ],
+ "加入后，由负责人为你分配工作。每项任务都有明确的截止时间和接收人。": [
+  "负责人分配任务后，可在“我的任务”查看。",
+  "Assigned work appears in My tasks."
+ ],
+ "期待伙伴加入": [
+  "暂无成员",
+  "No members"
+ ],
+ "全体伙伴按部门展示；成员管理与资料审核遵循当前账号权限。": [
+  "",
+  ""
+ ],
+ "从空白日程开始，也可以复用团队流程。": [
+  "",
+  ""
+ ],
+ "沉淀标准流程，为每次活动保留调整空间。": [
+  "",
+  ""
+ ],
+ "只填写活动信息，不预置任务。后续按需派单，再将成熟流程保存为模板。": [
+  "填写活动信息后，可添加任务。",
+  "Create the event, then add tasks."
+ ],
+ "从空白开始": [
+  "新建日程",
+  "New schedule"
+ ],
+ "空白日程 · 自由创建": [
+  "空白日程",
+  "Blank event"
+ ],
+ "办公室统一登记 → 分工与执行 → 交付 → 验收 → 归档。标准流程保底，创作空间放开。": [
+  "需求登记 → 分工 → 交付 → 验收 → 归档",
+  "Intake → Assignment → Delivery → Review → Archive"
+ ],
+ "不用背流程，照着这里走就好；标准的事交给系统，创作的事留给你们。": [
+  "",
+  ""
+ ],
+ "验收与沉淀": [
+  "验收与归档",
+  "Review & archive"
+ ],
+ "每一分都来自验收通过，踏踏实实记在这里。": [
+  "",
+  ""
+ ],
+ "任务验收通过后，积分和奖励记录会显示在这里。": [
+  "暂无积分记录",
+  "No points yet"
+ ],
+ "积分仅在验收后入账，不因重复点击而增加。其他奖励由负责人按备注兑现。": [
+  "任务验收后计入积分；其他奖励按备注兑现。",
+  "Points are posted after approval. Other rewards follow the task notes."
+ ],
+ "每个模式都有自己的排期、分工与主题色。权限仍按账号角色执行。": [
+  "选择全体协作或部门日程。",
+  "Choose all departments or a department schedule."
+ ],
+ "清晰阅读，轻松协作": [
+  "字号预览",
+  "Text preview"
+ ],
+ "这就是你的工作台字号": [
+  "字号预览",
+  "Text preview"
+ ],
+ "拖动即可预览；保存后应用到所有页面与设备。": [
+  "调整后可预览，保存后生效。",
+  "Preview the size, then save to apply."
+ ],
+ "粒子工作室": [
+  "粒子设置",
+  "Particle settings"
+ ],
+ "保存并同步各设备": [
+  "保存设置",
+  "Save settings"
+ ],
+ "保存并同步": [
+  "保存",
+  "Save"
+ ],
+ "已保存并同步": [
+  "已保存",
+  "Saved"
+ ],
+ "已同步最新数据": [
+  "已刷新",
+  "Refreshed"
+ ],
+ "姓名与头像修改由管理员审核，批准后两端同步生效。": [
+  "姓名与头像修改需管理员审核。",
+  "Name and avatar changes require administrator approval."
+ ],
+ "姓名与头像提交后经管理员审核，同步到各设备。": [
+  "姓名与头像修改需管理员审核。",
+  "Name and avatar changes require administrator approval."
+ ],
+ "姓名与头像提交管理员审核后两端同步生效。": [
+  "姓名与头像修改需管理员审核。",
+  "Name and avatar changes require administrator approval."
+ ]
+};
+for(const [source,[copy,en]]of Object.entries(editorial)){translations[source]=en;if(copy&&!Object.prototype.hasOwnProperty.call(translations,copy))translations[copy]=en}
+const pairs=Object.entries(translations).sort((a,b)=>b[0].length-a[0].length);
+const keys=Object.keys(translations),keyFor=s=>'s'+keys.indexOf(s),ui=language=>Object.fromEntries(keys.map((s,i)=>['s'+i,language==='en'?translations[s]:(editorial[s]?.[0]??s)]));
 module.exports={translations,translate,ui,keyFor};

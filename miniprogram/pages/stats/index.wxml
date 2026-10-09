@@ -1,5 +1,5 @@
 <include src="../../templates/share-preview.wxml"/><block wx:if="{{!sharePreview}}">
-<particle-field id="particle-field" enabled="{{motion && particles !== 'off'}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/>
+<particle-field id="particle-field" enabled="{{motion && particles !== 'off' && !navigationOpen}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/><workspace-nav bindopenchange="navigationChange" id="workspace-nav" current="stats" language="{{language}}" dark="{{dark}}" theme="{{particleTheme}}" user="{{currentUser}}"/>
 <view class="page stats-page {{fontScale > 1.12 ? 'font-large' : ''}} {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}}" style="{{themeStyle}}" bindtouchstart="particleTouchStart" bindtouchmove="particleTouchMove" bindtouchend="particleTouchEnd" bindtouchcancel="particleTouchEnd">
  <view class="heading"><view class="title">{{l.title}}</view><view class="muted">{{l.period}}</view></view>
  <view wx:if="{{!allowed}}" class="card">{{l.forbidden}}</view>

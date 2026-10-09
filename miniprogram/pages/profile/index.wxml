@@ -1,8 +1,8 @@
 <include src="../../templates/share-preview.wxml"/>
 <block wx:if="{{!sharePreview}}">
 <view style="{{themeStyle}}" class="page profile-page {{dark ? 'dark' : ''}} {{motion ? '' : 'motion-off'}} {{fontScale > 1.12 ? 'font-large' : ''}}" bindtouchstart="particleTouchStart" bindtouchmove="particleTouchMove" bindtouchend="particleTouchEnd" bindtouchcancel="particleTouchEnd">
- <particle-field id="particle-field" enabled="{{motion && particles !== 'off'}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/>
- <view class="brand"><image class="logo" src="/images/emblem.png" mode="aspectFit"/>{{ui.s53}}</view>
+ <particle-field id="particle-field" enabled="{{motion && particles !== 'off' && !navigationOpen}}" effect="{{particleStyle}}" density="{{particleDensity}}" settings="{{particleSystem}}" theme="{{particleTheme}}" rotation="{{rotationMinutes}}"/><workspace-nav bindopenchange="navigationChange" id="workspace-nav" current="profile" language="{{language}}" dark="{{dark}}" theme="{{particleTheme}}" user="{{currentUser}}"/>
+
  <view class="profile-identity card" data-url="/pages/profile/settings" bindtap="go">
   <image wx:if="{{user.avatar}}" class="profile-avatar" src="{{user.avatar}}" mode="aspectFill"/>
   <view wx:else class="profile-placeholder">{{user.name}}</view>

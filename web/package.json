@@ -47,7 +47,8 @@
     "test:presence": "node scripts/presence-ui-test.mjs",
     "review:status": "node scripts/account-review.mjs status",
     "review:seal": "node scripts/account-review.mjs seal",
-    "review:restore": "node scripts/account-review.mjs restore"
+    "review:restore": "node scripts/account-review.mjs restore",
+    "test:mini:inputs": "node scripts/mini-input-lifecycle-test.mjs"
   },
   "engines": {
     "node": ">=24"
@@ -60,5 +61,5 @@
     "drizzle-kit": "0.31.5",
     "esbuild": "0.25.11"
   },
-  "version": "1.0.5"
+  "version": "1.0.6"
 }
