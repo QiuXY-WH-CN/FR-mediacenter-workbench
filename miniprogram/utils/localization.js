@@ -174,6 +174,12 @@ const editorial={
  ]
 };
 for(const [source,[copy,en]]of Object.entries(editorial)){translations[source]=en;if(copy&&!Object.prototype.hasOwnProperty.call(translations,copy))translations[copy]=en}
+Object.assign(translations,{
+ '复制日程':'Duplicate schedule','日程名称':'Schedule name','新的开始日期':'New start date','保留原分工':'Keep assignments','重复与启用':'Repeat & activation','日程启用':'Activation','提前 7 天自动启用':'Enable 7 days before','立即启用':'Enable now','暂不启用':'Paused','启用设置':'Activation settings','自动启用':'Auto enable','已启用':'Enabled','未启用':'Scheduled','待启用':'Scheduled','已挂起':'Paused','已归档':'Archived',
+ '重复':'Repeat','不重复':'Never','每天':'Daily','每周':'Weekly','每月':'Monthly','每年':'Yearly','间隔':'Interval','每周重复日':'Days of week','结束重复':'End repeat','不设结束日期':'Never end','指定日期':'On date','指定次数':'After occurrences','结束日期':'End date','重复次数（含首次）':'Occurrences (including first)','修改范围':'Change scope','仅此日程':'This occurrence','此日程及之后':'This and future occurrences','整个重复日程':'All occurrences','所属系列':'Series','未分类':'Uncategorized','系列':'Series','年度目标':'Annual goal','编辑系列':'Edit series','新建系列':'New series','删除目标':'Delete goal','目标名称':'Goal name','目标数量':'Target','学年':'Academic year','负责部门':'Department','统计类型':'Measure','日程 / 推送':'Schedules / posts','设计 / 文创':'Designs / products',
+ '参考流程':'Workflow reference','时间与积分参考':'Scheduling & points reference','模板配置':'Template values','历史排期参考':'Previous scheduling','创建：':'Created:','更新：':'Updated:','任务、分工与日期一并复制，完成状态和交付内容重新开始。':'Copies tasks, assignments and dates. Delivery and completion start fresh.',
+ '任务尚未启用，可由负责人提前启用。':'This schedule is awaiting activation. A lead can enable it early.','未启用日程不计入待办。':'Scheduled events are excluded from to-do counts.'
+});
 const pairs=Object.entries(translations).sort((a,b)=>b[0].length-a[0].length);
 const keys=Object.keys(translations),keyFor=s=>'s'+keys.indexOf(s),ui=language=>Object.fromEntries(keys.map((s,i)=>['s'+i,language==='en'?translations[s]:(editorial[s]?.[0]??s)]));
 module.exports={translations,translate,ui,keyFor};

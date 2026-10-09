@@ -1,7 +1,7 @@
 // Shared organization scene: circle constraints, damped springs and anchored camera gestures.
 module.exports=(()=>{
  const depts=['办公室','新媒体运营部','视觉传达部','创意设计部'],colors=['#168875','#d47918','#3478c5','#8b5bc7'];
- const color=dept=>colors[depts.indexOf(dept)]||'#777777',groups=people=>depts.map(dept=>({dept,color:color(dept),people:people.filter(p=>!p.owner&&p.dept===dept)}));
+ const color=dept=>colors[depts.indexOf(dept)]||'#777777',groups=people=>depts.map(dept=>{const members=people.filter(p=>!p.owner&&p.dept===dept).sort((a,b)=>({admin:0,manager:1,member:2}[a.role]??2)-({admin:0,manager:1,member:2}[b.role]??2)||String(a.name||a.label||'').localeCompare(String(b.name||b.label||'')));return {dept,color:color(dept),people:members,count:members.length,checkedCount:members.filter(p=>p.checked).length}});
  const descriptions={'办公室':'统筹需求 · 日程与交接','新媒体运营部':'内容策划 · 推送与发布','视觉传达部':'摄影摄像 · 素材与影像','创意设计部':'视觉创作 · 海报与文创'};
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rank={admin:0,manager:1,member:2};
  function node(s,id){return s.nodes.find(n=>n.id===id)}

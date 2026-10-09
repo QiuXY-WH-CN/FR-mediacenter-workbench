@@ -1,1 +1,2 @@
 .overview-grid>.card{margin:20rpx 0}.workspace-switch{margin-bottom:20rpx}.stats{gap:16rpx}.stat{background:#88804}.overview-grid .h2{padding-bottom:12rpx;border-bottom:1rpx solid #8882}@media(min-width:700px){.overview-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24rpx}.overview-grid>.card{margin:0}.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.schedule-muted .h3,.schedule-muted .reward{color:#8b8b8b}.dark .schedule-muted .h3,.dark .schedule-muted .reward{color:#aaa}

@@ -10,7 +10,7 @@ for(const dir of readdirSync(new URL('pages/',root)))
  for(const file of readdirSync(new URL(`pages/${dir}/`,root)).filter(p=>p.endsWith('.wxml')))
   assert.ok(!/wx:(?:if|elif)="(?!\{\{)/.test(read(`pages/${dir}/${file}`)),`${dir}/${file}: condition must be an expression`);
 let editor;
-const V={page:s=>s,depts:['办公室'],day:()=> '2026-10-08'};
+const V={page:s=>s,depts:['办公室'],day:()=> '2026-10-08',shift:require('../../miniprogram/utils/schedule-model.js').shift};
 vm.runInNewContext(read('pages/editor/index.js'),{Page:s=>editor=s,require:p=>p.endsWith('/view')?V:require(fileURLToPath(new URL('pages/editor/'+p+'.js',root))),wx:{}});
 editor.options={mode:'event-new'};editor.data=structuredClone(editor.data);editor.setData=p=>Object.assign(editor.data,p);
 editor.renderState({user:{id:'root',role:'admin',owner:true},people:[],events:[],tasks:[],templates:[],settings:{}});

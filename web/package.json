@@ -48,7 +48,10 @@
     "review:status": "node scripts/account-review.mjs status",
     "review:seal": "node scripts/account-review.mjs seal",
     "review:restore": "node scripts/account-review.mjs restore",
-    "test:mini:inputs": "node scripts/mini-input-lifecycle-test.mjs"
+    "test:mini:inputs": "node scripts/mini-input-lifecycle-test.mjs",
+    "test:schedules": "node scripts/schedule-v107-test.mjs && node scripts/schedule-audit-v107-test.mjs && node scripts/template-policy-test.mjs",
+    "test:schedules:browser": "node scripts/schedules-v107-browser-test.mjs",
+    "test:mini:schedules": "node scripts/native-schedule-v107-test.mjs"
   },
   "engines": {
     "node": ">=24"
@@ -61,5 +64,5 @@
     "drizzle-kit": "0.31.5",
     "esbuild": "0.25.11"
   },
-  "version": "1.0.6"
+  "version": "1.0.7"
 }

@@ -19,7 +19,7 @@ Page(V.page({
   data: {
     year: new Date().getFullYear(), month: new Date().getMonth() + 1,
     selected: V.day(), week: ['一', '二', '三', '四', '五', '六', '日'],
-    deptIndex: 0, depts: ['全部可见部门', ...V.depts], cells: [], selectedGroups: []
+    deptIndex: 0, depts: ['全部可见部门', ...V.depts], cells: [], selectedGroups: [], viewMode:'month', timelineRows:[]
   },
   renderState(snapshot) {
     this.snapshot = snapshot;
@@ -35,6 +35,10 @@ Page(V.page({
     }
     this.calendar();
   },
+  onShow(){if(this.clockTimer)clearInterval(this.clockTimer);this.clockTimer=setInterval(()=>this.calendar(),60000)},
+  onHide(){if(this.clockTimer)clearInterval(this.clockTimer);this.clockTimer=null},
+  onUnload(){if(this.clockTimer)clearInterval(this.clockTimer)},
+  mode(event){this.setData({viewMode:event.currentTarget.dataset.id});this.calendar()},
   visibleSchedule() {
     // Use only the server's authorized snapshot; selection never fetches hidden tasks.
     const dept = this.data.deptIndex ? this.data.depts[this.data.deptIndex] : '';
@@ -80,7 +84,8 @@ Page(V.page({
       const active = events.filter(event => contains(event, id));
       return {id, number: index + 1, today: id === today, tasks: due.length,
         events: active.length, total: due.length + active.length, completed: due.length>0&&due.every(task=>task.status==='done'),
-        urgent: due.some(task => task.status !== 'done' && ['urgent', 'high'].includes(task.priority)),
+        urgent: due.some(task => task.scheduleEnabled!==false && task.status !== 'done' && ['urgent', 'high'].includes(task.priority)),
+        inactive:due.length>0&&due.every(task=>task.scheduleEnabled===false),
         preview: due[0]?.name || active[0]?.name || ''};
     });
     const selectedTasks = tasks.filter(task => dateKey(task.due) === selected).sort(M.compare);
@@ -104,6 +109,9 @@ Page(V.page({
     if (standalone.length) selectedGroups.push({id: '__standalone__', name: english ? 'Tasks' : '任务', openable: false, tasks: standalone.map(task => ({...task, dueToday: true})), otherTasks: [], taskCount: standalone.length, deadlineCount: standalone.length, dateLabel: selected, scheduleLabel: calendarLabels.dueToday});
     selectedGroups.sort((a, b) => M.compare(a.sortTask || a.tasks[0] || {due: a.dateLabel, status: 'done'}, b.sortTask || b.tasks[0] || {due: b.dateLabel, status: 'done'}));
     const firstKey = prefix + '-01', lastKey = prefix + '-' + String(total).padStart(2, '0');
+    const now=new Date(),currentTime=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),currentMonth=today.startsWith(prefix),todayFraction=(now.getHours()*60+now.getMinutes())/1440;
+    const timelineAnchor=this.timelineAnchorMonth===prefix?{}:{timelineScrollLeft:Math.max(0,(Number((currentMonth?today:selected).slice(8))-3)*96)*(wx.getWindowInfo?.().windowWidth||wx.getSystemInfoSync?.().windowWidth||375)/750};this.timelineAnchorMonth=prefix;
+    const timelineRows=M.groups(events,tasks).map(group=>{const dates=[dateKey(group.date),dateKey(group.endDate),...group.tasks.map(task=>dateKey(task.due))].filter(Boolean).sort(),start=dates[0],end=dates[dates.length-1];if(!start||start>lastKey||end<firstKey)return null;const left=Math.max(0,(Date.parse(start+'T12:00:00Z')-Date.parse(firstKey+'T12:00:00Z'))/86400000),right=Math.min(total,(Date.parse(end+'T12:00:00Z')-Date.parse(firstKey+'T12:00:00Z'))/86400000+1),completed=group.scheduleState?group.scheduleState==='archived':group.tasks.length>0&&group.tasks.every(t=>t.status==='done'),startAt=Date.parse(start+'T'+(start===dateKey(group.date)&&group.allDay===false?group.startTime||'00:00':'00:00')+':00'),endAt=Date.parse(end+'T'+(end===dateKey(group.endDate||group.date)&&group.allDay===false?group.endTime||'23:59':'23:59')+':59'),phase=completed||endAt<now.getTime()?'ended':startAt>now.getTime()?'upcoming':'ongoing';return {...group,left:left*96,width:Math.max(84,(right-left)*96-8),phase,phaseLabel:english?{ended:'Ended',upcoming:'Upcoming',ongoing:'In progress'}[phase]:{ended:'已结束',upcoming:'未开始',ongoing:'进行中'}[phase],departmentColor:O.color(group.department||group.tasks[0]?.dept)}}).filter(Boolean);
     this.setData({
       departmentColor: O.color(dept), calendarLabels,
       monthLabel: english ? `${monthNames[month - 1]} ${year}` : `${year} 年 ${month} 月`,
@@ -114,6 +122,7 @@ Page(V.page({
       selectedEvents, selectedTasks, selectedGroups,
       nearestDate: this.closestDate(selected, {tasks, events}),
       monthHasSchedule: days.some(day => day.total)
+      ,...timelineAnchor,viewModes:[{id:'month',label:english?'Month':'月历'},{id:'timeline',label:english?'Timeline':'时间轴'}],timelineRows,timelineWidth:total*96,showNowLine:currentMonth,nowLineLeft:(Number(today.slice(8))-1+todayFraction)*96,currentTime,timelineEmpty:english?'No schedules this month':'本月没有日程'
     });
   },
   month(event) {

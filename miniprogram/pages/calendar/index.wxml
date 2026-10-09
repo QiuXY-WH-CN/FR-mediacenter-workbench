@@ -1,9 +1,10 @@
 <template name="calendar-child">
-  <view class="calendar-child {{task.status === 'done' ? 'calendar-archived' : ''}} {{task.dueToday ? 'calendar-due-today' : ''}}" data-id="{{task.id}}" bindtap="openTask">
+  <view class="calendar-child {{task.status === 'done' ? 'calendar-archived' : ''}} {{task.scheduleEnabled === false ? 'calendar-inactive' : ''}} {{task.dueToday ? 'calendar-due-today' : ''}}" data-id="{{task.id}}" bindtap="openTask">
     <view class="calendar-child-dot" style="background:{{task.departmentColor}};"/>
     <view class="grow">
       <view class="row start"><view class="h3 grow">{{task.name}}</view><text user-select="{{false}}" selectable="{{false}}" class="priority {{task.priority}}">{{task.priorityLabel}}{{ui.s98}}</text></view>
       <view class="calendar-task-info"><text user-select="{{false}}" selectable="{{false}}">{{task.ownerName}}</text><text user-select="{{false}}" selectable="{{false}}" class="badge {{task.status}}">{{task.statusLabel}}</text></view>
+      <view class="muted small">{{task.departmentLabel}}<text wx:if="{{task.scheduleEnabled === false}}"> · {{task.scheduleLabel}}</text></view>
       <view class="calendar-due"><text user-select="{{false}}" selectable="{{false}}" wx:if="{{task.dueToday}}" class="calendar-due-tag">{{calendarLabels.dueToday}}</text><text user-select="{{false}}" selectable="{{false}}">{{task.dueLabel}}</text></view>
     </view>
     <text user-select="{{false}}" selectable="{{false}}" class="calendar-child-arrow">›</text>
@@ -19,6 +20,7 @@
     <picker class="calendar-department" range="{{deptLabels}}" value="{{deptIndex}}" bindchange="dept"><view class="picker">{{deptLabels[deptIndex]}} ▾</view></picker>
     <button class="calendar-today" bindtap="today">{{ui.s241}}</button>
   </view>
+  <view class="tabs calendar-mode"><view class="tab {{viewMode === item.id ? 'selected' : ''}}" wx:for="{{viewModes}}" wx:key="id" data-id="{{item.id}}" bindtap="mode">{{item.label}}</view></view>
   <view class="calendar-board">
     <view class="calendar-month row">
       <button class="calendar-arrow" data-delta="-1" bindtap="month" aria-label="{{calendarLabels.previousMonth}}">‹</button>
@@ -26,9 +28,9 @@
       <button class="calendar-arrow" data-delta="1" bindtap="month" aria-label="{{calendarLabels.nextMonth}}">›</button>
     </view>
     <view class="calendar-summary"><text user-select="{{false}}" selectable="{{false}}">{{calendarLabels.monthEvents}} {{monthEventCount}}</text><text user-select="{{false}}" selectable="{{false}}">{{calendarLabels.monthTasks}} {{monthTaskCount}}</text></view>
-    <view class="calendar-week"><view wx:for="{{week}}" wx:key="*this">{{item}}</view></view>
+    <block wx:if="{{viewMode === 'month'}}"><view class="calendar-week"><view wx:for="{{week}}" wx:key="*this">{{item}}</view></view>
     <view class="calendar-grid" bindtouchstart="touchStart" bindtouchend="touchEnd">
-      <view wx:for="{{cells}}" wx:key="id" class="calendar-cell {{item.empty ? 'calendar-blank' : ''}} {{selected === item.id ? 'calendar-selected' : ''}} {{item.today ? 'calendar-is-today' : ''}} {{item.urgent ? 'calendar-urgent' : ''}} {{item.completed ? 'calendar-completed' : ''}}" data-id="{{item.id}}" bindtap="choose">
+      <view wx:for="{{cells}}" wx:key="id" class="calendar-cell {{item.empty ? 'calendar-blank' : ''}} {{selected === item.id ? 'calendar-selected' : ''}} {{item.today ? 'calendar-is-today' : ''}} {{item.urgent ? 'calendar-urgent' : ''}} {{item.completed ? 'calendar-completed' : ''}} {{item.inactive ? 'calendar-inactive' : ''}}" data-id="{{item.id}}" bindtap="choose">
         <block wx:if="{{!item.empty}}">
           <view class="calendar-number">{{item.number}}</view>
           <view class="calendar-count" wx:if="{{item.tasks}}">{{item.tasks}}<text user-select="{{false}}" selectable="{{false}}" class="calendar-count-dot"/></view>
@@ -37,6 +39,8 @@
         </block>
       </view>
     </view>
+    </block>
+    <scroll-view wx:else scroll-left="{{timelineScrollLeft}}" scroll-x="{{true}}" enable-flex="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}" class="calendar-timeline-scroll"><view class="calendar-timeline" style="width:{{timelineWidth}}rpx;"><view class="timeline-axis"><view wx:for="{{days}}" wx:key="id" data-id="{{item.id}}" bindtap="choose" class="timeline-date {{item.today ? 'timeline-today' : ''}} {{selected === item.id ? 'timeline-selected' : ''}}">{{item.number}}</view></view><view wx:if="{{showNowLine}}" class="timeline-now" style="left:{{nowLineLeft}}rpx;"><text>{{currentTime}}</text></view><view class="timeline-lane" wx:for="{{timelineRows}}" wx:key="id"><view data-id="{{item.id}}" bindtap="openEvent" class="timeline-caption {{item.phase}}" style="left:{{item.left}}rpx;"><view class="timeline-name">{{item.name}}</view><view class="timeline-meta">{{item.phaseLabel}} · {{item.tasks.length}} {{language === 'en' ? 'tasks' : '项任务'}}</view></view><view data-id="{{item.id}}" bindtap="openEvent" class="timeline-schedule {{item.phase}} {{item.scheduleEnabled === false ? 'timeline-inactive' : ''}}" style="left:{{item.left}}rpx;width:{{item.width}}rpx;--lane-color:{{item.departmentColor}};"/></view><view wx:if="{{!timelineRows.length}}" class="timeline-empty">{{timelineEmpty}}</view></view></scroll-view>
     <view wx:if="{{!monthHasSchedule}}" class="calendar-month-empty muted">{{calendarLabels.emptyMonth}}</view>
   </view>
   <view class="calendar-agenda-heading row">
@@ -44,7 +48,7 @@
     <view class="grow"><view class="h2">{{selected}}</view><view class="muted small">{{ui.s342}}</view></view>
     <button class="calendar-arrow" data-delta="1" bindtap="shiftDay" aria-label="{{calendarLabels.nextDay}}">›</button>
   </view>
-  <view class="calendar-project card" wx:for="{{selectedGroups}}" wx:for-item="group" wx:key="id">
+  <view class="calendar-project card {{group.scheduleEnabled === false ? 'calendar-inactive' : ''}}" wx:for="{{selectedGroups}}" wx:for-item="group" wx:key="id">
     <view class="calendar-project-heading row" data-id="{{group.id}}" bindtap="openCalendarEvent">
       <view class="grow"><view class="h2">{{group.name}}</view><view class="muted small">{{group.dateLabel}}</view></view>
       <text user-select="{{false}}" selectable="{{false}}" wx:if="{{group.openable}}" class="calendar-project-arrow">›</text>

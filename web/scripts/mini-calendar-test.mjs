@@ -20,7 +20,7 @@ const markup = readFileSync(new URL('../../miniprogram/pages/calendar/index.wxml
 const styles = readFileSync(new URL('../../miniprogram/pages/calendar/index.wxss', import.meta.url), 'utf8');
 function load() {
   let page;
-  vm.runInNewContext(source, {Date: FixedDate, Page: spec => {page = spec;}, require: name => name.endsWith('/view') ? V : name.endsWith('/organization') ? organization : model});
+  vm.runInNewContext(source, {Date: FixedDate, wx:globalThis.wx,Page: spec => {page = spec;}, require: name => name.endsWith('/view') ? V : name.endsWith('/organization') ? organization : model});
   page.data = structuredClone(page.data);
   page.setData = function (data) {Object.assign(this.data, data);};
   return page;

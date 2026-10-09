@@ -8,7 +8,8 @@ const DAY = 86400000;
 const GET_PATHS = new Set(['info', 'state', 'members', 'stats']);
 const POST_PATHS = new Set([
   'setup', 'login', 'captcha', 'register', 'recover', 'logout', 'password', 'presence',
-  'events/create', 'events/update', 'events/reschedule',
+  'events/create', 'events/update', 'events/reschedule', 'events/duplicate', 'events/activation',
+  'series/save', 'series/delete-goal',
   'tasks/create', 'tasks/action', 'templates/save',
   'members/update', 'invite', 'reset-link', 'profile/request', 'profile/review', 'settings/save', 'account/request', 'account/cancel', 'account/review', 'stats/maintenance'
 ]);

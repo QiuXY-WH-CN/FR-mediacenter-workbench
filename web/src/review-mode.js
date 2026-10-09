@@ -16,7 +16,7 @@ export function reviewScopedDB(db){if(db.reviewMode)return db;return {rawDB:db,r
  });return db.prepare(scoped)},batch:statements=>db.batch(statements)}}
 // Public aliases never replace the credentials used to authenticate the administrator.
 export function reviewPublicData(value,owner){
- const identityKeys=new Set(['id','user','user_id','createdBy','owner','owner_id','receiver','reviewer_id','owners','receivers','reviewers','target','submittedBy','archivedBy','approvedBy']);
+ const identityKeys=new Set(['id','user','user_id','createdBy','updatedBy','owner','owner_id','receiver','reviewer_id','owners','receivers','reviewers','target','submittedBy','archivedBy','approvedBy']);
  // Identity values can equal role/status/theme enums. Redact only typed identity fields.
  function visit(item,key,identityRecord=false){
   if(typeof item==='string'){
@@ -28,7 +28,7 @@ export function reviewPublicData(value,owner){
   if(Array.isArray(item))return item.map(x=>visit(x,key));
   if(item&&typeof item==='object'){
    const isOwner=item.id===owner.id||item.user===owner.id||item.user_id===owner.id;
-   return Object.fromEntries(Object.entries(item).map(([field,val])=>[field,visit(val,field,isOwner)]));
+   return Object.fromEntries(Object.entries(item).map(([field,val])=>[field,field==='createdByName'&&item.createdBy===owner.id||field==='updatedByName'&&item.updatedBy===owner.id?'审核管理员':visit(val,field,isOwner)]));
   }
   return item;
  }

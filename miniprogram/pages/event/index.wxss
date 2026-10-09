@@ -1,0 +1,3 @@
+.event-tags{display:flex;align-items:center;gap:16rpx;flex-wrap:wrap;margin:18rpx 0}.event-audit{border-color:#8882;background:#88808006}.schedule-muted .h3,.schedule-muted .reward{color:#8b8b8b}.dark .schedule-muted .h3{color:#aaa}
+
+.schedule-muted .priority,.schedule-muted .badge{background:#efefef;color:#888}.dark .schedule-muted .priority,.dark .schedule-muted .badge{background:#292929;color:#aaa}
