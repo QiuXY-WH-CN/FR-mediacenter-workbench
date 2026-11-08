@@ -5,6 +5,19 @@ node_modules/
 # Local runtime data and secrets
 .local/
 *.log
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.bak
+*.tmp
+
+# Machine-local project and service configuration
+miniprogram/project.private.config.json
+web/cloudflared-config.yml
+web/.env
+web/.env.*
+!web/.env.example
 
 # Built web server bundle (contains embedded SOP docs; build locally)
 web/dist/
@@ -12,10 +25,10 @@ web/dist/
 # Deprecated old files
 _deprecated/
 
+# Generated Windows release artifacts
+发布版/
+
 # OS / editor
 Thumbs.db
 .DS_Store
 .vscode/
-
-# Cloudflare named tunnel (machine-specific)
-web/cloudflared-config.yml

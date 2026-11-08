@@ -13,7 +13,7 @@ const destination = join(web, 'sop', 'screenshots');
 const cli = 'C:/Program Files (x86)/Tencent/微信web开发者工具/wechatide.cmd';
 const quote = value => "'" + String(value).replace(/'/g, "''") + "'";
 function official(tool, args = []) {
-  const shell = process.env.PWSH || 'C:/Users/QiuXY/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe';
+  const shell = process.env.PWSH || 'powershell.exe';
   const command = `& ${quote(cli)} -c Codex ${tool} ${args.map(quote).join(' ')}`;
   const result = spawnSync(shell, ['-NoProfile', '-Command', command], { encoding: 'utf8', timeout: 55000, maxBuffer: 2 * 1024 * 1024, windowsHide: true });
   if (result.error) throw new Error(`${tool}: ${result.error.code || 'failed'}`);

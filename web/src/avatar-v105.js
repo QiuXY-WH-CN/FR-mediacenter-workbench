@@ -14,7 +14,7 @@
   let bitmap,dialog;
   try{
    if(file.size>10*1024*1024)throw Error(text('请选择 10 MB 以内的图片','Choose an image smaller than 10 MB'));
-   if(!/^image\/(png|jpeg|webp)$/i.test(file.type))throw Error(text('请选择 PNG、JPEG 或 WebP 图片','Choose a PNG, JPEG or WebP image'));
+   if(file.type&&!/^image\//i.test(file.type))throw Error(text('请选择图片文件','Choose an image file'));
    bitmap=await createImageBitmap(file);if(bitmap.width*bitmap.height>64000000)throw Error(text('图片尺寸过大，请先缩小','This image is too large. Resize it first.'));
    if(epoch!==pendingEpoch){bitmap.close();return}if(!form.isConnected||sourceOwner!==(typeof user==='object'?user?.id:null)){bitmap.close();pendingSave=null;if(saveButton)saveButton.disabled=saveDisabled;return}
    dialog=document.createElement('dialog');dialog.className='avatar-crop-dialog';dialog.setAttribute('aria-label',text('调整头像','Adjust avatar'));

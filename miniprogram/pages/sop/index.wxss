@@ -1,0 +1,10 @@
+.sop-progress{margin:16rpx 0}
+.sop-progress-track{height:10rpx;border-radius:20rpx;background:#f0e6d8;overflow:hidden;margin-top:10rpx}
+.sop-progress-fill{height:100%;background:linear-gradient(90deg,#ffb35c,#ff861b);border-radius:20rpx}
+.sop-checks{margin:18rpx 0}
+.sop-check{display:flex;align-items:flex-start;gap:14rpx;padding:18rpx;border:1rpx solid #f0e4d2;border-radius:14rpx;background:#fffaf3;margin:12rpx 0}
+.sop-check.on{background:#fff3e6;border-color:#ffc58c}
+.sop-check-box{width:36rpx;height:36rpx;border:2rpx solid #e0a65a;border-radius:8rpx;display:flex;align-items:center;justify-content:center;color:#b55a00;font-size:26rpx;flex-shrink:0}
+.sop-check.on .sop-check-box{background:#ff861b;border-color:#ff861b;color:#fff}
+.sop-check-text{font-size:28rpx;line-height:1.6}
+.sop-md{display:block;font-size:30rpx;line-height:1.7;color:#3d3732}

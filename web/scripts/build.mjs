@@ -1,7 +1,8 @@
 import {readFile,writeFile,mkdir,readdir} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-process.chdir(fileURLToPath(new URL('..',import.meta.url)));
+const webRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+process.chdir(webRoot);
 // Avoid a Windows/Node 24 worker-thread service stall during launcher builds.
 process.env.ESBUILD_WORKER_THREADS='0';
 const {build}=await import('esbuild');
@@ -32,8 +33,8 @@ assets['/index.html'].body=assets['/index.html'].body.replace('href="style.css"'
 for(const file of ['emblem.png','wordmark.png'])assets['/brand/'+file]={type:'image/png',base64:true,body:(await readFile('src/brand/'+file)).toString('base64')};
 const images=(await readdir('sop/screenshots').catch(()=>[])).filter(f=>f.endsWith('.png')).sort();
 for(const file of images)assets['/guide/'+encodeURIComponent(file)]={type:'image/png',base64:true,body:(await readFile('sop/screenshots/'+file)).toString('base64')};
-const documents=[{path:'工作台操作手册.md',title:'工作台操作手册',content:await readFile('sop/工作台操作手册.md','utf8'),images:images.map(f=>({url:'/guide/'+encodeURIComponent(f),caption:f.replace(/^\d+-/,'').replace('.png','')}))},{path:'知识库.md',title:'知识库',content:await readFile('sop/知识库.md','utf8')}];assets['/sop-docs.json']={type:'application/json; charset=utf-8',body:JSON.stringify(documents)};
+const documents=[{path:'新手快速入门.md',title:'新手快速入门 · 手把手教程',content:await readFile('sop/新手快速入门.md','utf8')},{path:'工作台操作手册.md',title:'工作台操作手册',content:await readFile('sop/工作台操作手册.md','utf8')},{path:'知识库.md',title:'知识库',content:await readFile('sop/知识库.md','utf8')}];assets['/sop-docs.json']={type:'application/json; charset=utf-8',body:JSON.stringify(documents)};
 await writeFile('src/assets.generated.js','export default '+JSON.stringify(assets));
 await mkdir('dist/server',{recursive:true});
-await build({absWorkingDir:process.cwd(),entryPoints:['./src/worker.js'],outfile:'dist/server/index.js',bundle:true,format:'esm',platform:'browser',target:'es2022',minify:true});
+await build({absWorkingDir:webRoot,entryPoints:[path.join(webRoot,'src','worker.js')],outfile:path.join(webRoot,'dist','server','index.js'),bundle:true,format:'esm',platform:'browser',target:'es2022',minify:true});
 console.log('Worker and embedded assets built.');

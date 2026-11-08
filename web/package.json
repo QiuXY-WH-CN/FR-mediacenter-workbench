@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "release:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../tools/release-windows.ps1",
     "dev": "node scripts/dev.mjs",
     "test": "node scripts/test.mjs",
     "test:mini": "node scripts/test-mini.mjs",
