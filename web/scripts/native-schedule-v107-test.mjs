@@ -3,6 +3,9 @@ import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import vm from 'node:vm';
 import {fileURLToPath} from 'node:url';
+
+// Calendar labels use the device clock. Run the campus-time fixture in its own zone.
+process.env.TZ = 'Asia/Shanghai';
 const require=createRequire(import.meta.url),S=require('../../miniprogram/utils/schedule-model'),T=require('../../miniprogram/utils/task-ui'),O=require('../../miniprogram/utils/organization'),P=require('../../miniprogram/utils/template-policy');
 globalThis.wx={getStorageSync(){},getSystemInfoSync:()=>({theme:'light'})};
 const realV=require('../../miniprogram/utils/view'),mutations=[],paths=[],sheets=[],modals=[],timers=new Map();let timerId=0;
