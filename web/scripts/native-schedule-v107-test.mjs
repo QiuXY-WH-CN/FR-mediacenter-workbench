@@ -5,10 +5,10 @@ import vm from 'node:vm';
 import {fileURLToPath} from 'node:url';
 const require=createRequire(import.meta.url),S=require('../../miniprogram/utils/schedule-model'),T=require('../../miniprogram/utils/task-ui'),O=require('../../miniprogram/utils/organization'),P=require('../../miniprogram/utils/template-policy');
 globalThis.wx={getStorageSync(){},getSystemInfoSync:()=>({theme:'light'})};
-const realV=require('../../miniprogram/utils/view'),mutations=[],paths=[],sheets=[],timers=new Map();let timerId=0;
+const realV=require('../../miniprogram/utils/view'),mutations=[],paths=[],sheets=[],modals=[],timers=new Map();let timerId=0;
 const fixed='2026-10-09';class FixedDate extends Date{constructor(...args){super(...(args.length?args:[fixed+'T12:30:00+08:00']))}}
 const V={...realV,page:s=>({...s,openEvent(e){paths.push(e.currentTarget.dataset.id)}}),day:d=>realV.day(d||new FixedDate()),api:{mutate:async(path,data)=>{mutations.push({path,data});return {}}},action:async(_,fn)=>fn(),error:e=>{throw e}};
-function load(route,options={}){let page;vm.runInNewContext(readFileSync(new URL('../../miniprogram/pages/'+route+'/index.js',import.meta.url),'utf8'),{Date:FixedDate,Page:s=>page=s,require:p=>p.endsWith('/view')?V:require(fileURLToPath(new URL('../../miniprogram/pages/'+route+'/'+p+'.js',import.meta.url))),wx:{showToast(){},navigateBack(){},navigateTo(o){paths.push(o.url)},showActionSheet:async()=>({tapIndex:sheets.shift()??0}),showModal:async()=>({confirm:true})},setInterval:fn=>{timers.set(++timerId,fn);return timerId},clearInterval:id=>timers.delete(id)});page.options=options;page.data=structuredClone(page.data);page.setData=function(patch){for(const[key,value]of Object.entries(patch)){const parts=key.replace(/\[(\d+)\]/g,'.$1').split('.');let target=this.data;for(const k of parts.slice(0,-1))target=target[k];target[parts.at(-1)]=value}};return page}
+function load(route,options={}){let page;vm.runInNewContext(readFileSync(new URL('../../miniprogram/pages/'+route+'/index.js',import.meta.url),'utf8'),{Date:FixedDate,Page:s=>page=s,require:p=>p.endsWith('/view')?V:require(fileURLToPath(new URL('../../miniprogram/pages/'+route+'/'+p+'.js',import.meta.url))),wx:{showToast(){},navigateBack(){paths.push('back')},navigateTo(o){paths.push(o.url)},showActionSheet:async()=>({tapIndex:sheets.shift()??0}),showModal:async()=>({confirm:modals.shift()??true})},setInterval:fn=>{timers.set(++timerId,fn);return timerId},clearInterval:id=>timers.delete(id)});page.options=options;page.data=structuredClone(page.data);page.setData=function(patch){for(const[key,value]of Object.entries(patch)){const parts=key.replace(/\[(\d+)\]/g,'.$1').split('.');let target=this.data;for(const k of parts.slice(0,-1))target=target[k];target[parts.at(-1)]=value}};return page}
 const root={id:'root',role:'admin',owner:true,name:'测试管理员',dept:''},manager={id:'manager',role:'manager',name:'测试负责人',dept:'办公室'},office={id:'office',role:'member',name:'测试办公室成员',dept:'办公室'},design={id:'design',role:'member',name:'测试创设成员',dept:'创意设计部'},people=[root,manager,office,design];
 const event={id:'e',name:'测试推送',date:'2026-10-12',endDate:'2026-10-13',allDay:false,startTime:'09:00',endTime:'18:00',createdBy:'manager',createdAt:'2026-10-01T09:00:00',updatedBy:'root',updatedAt:'2026-10-03T10:00:00',activation:'auto',seriesId:'news',canEditEvent:true};
 const task={id:'t',name:'测试协作',event:'e',owners:['office','design'],receivers:['manager'],depts:['办公室','创意设计部'],due:'2026-10-12T18:00',status:'active',priority:'high',rewardPoints:20,depends:[],checks:[],requirements:'测试要求'};
@@ -29,6 +29,26 @@ const edit=load('editor',{mode:'event-edit',id:'e'});edit.renderState({...base,e
 const goal=load('editor',{mode:'series-goal',id:'news'});goal.renderState(base);set(goal,'name','测试年度视频目标');set(goal,'goalDepartment','视觉传达部');set(goal,'metric','videos');set(goal,'target','12');await goal.save();assert.equal(mutations.at(-1).path,'series/save');assert.equal(mutations.at(-1).data.goal.target,12);assert.equal(mutations.at(-1).data.goal.department,'视觉传达部');assert.equal(mutations.at(-1).data.goal.metric,'videos');
 const decorated=realV.decorate(base);assert.equal(decorated.events[0].creatorName,manager.name);assert.equal(decorated.events[0].modifierName,root.name);assert.equal(decorated.tasks[0].departmentLabel,'办公室 · 创意设计部');
 const archivedCopy=realV.decorate({...base,events:[{...event,canEditEvent:false}],tasks:[{...task,status:'done'}]});assert.equal(archivedCopy.events[0].canEdit,false);assert.equal(archivedCopy.events[0].canCopy,true);const archivedDetail=load('event',{id:'e'});archivedDetail.renderState(archivedCopy);archivedDetail.duplicate();assert.equal(paths.at(-1),'/pages/editor/index?mode=event-copy&id=e');assert.equal(realV.decorate({...base,_localReadOnly:true}).events[0].canCopy,false);
+archivedDetail.saveTemplate();
+assert.equal(paths.at(-1),'/pages/editor/index?mode=template-from&id=e');
+assert.equal(archivedDetail.data.event.canDelete,false,'Archived schedules can be reused without exposing deletion');
+const canDelete=load('event',{id:'e'});canDelete.renderState(decorated);
+assert.equal(canDelete.data.event.canDelete,true);
+let beforeDelete=mutations.length;modals.push(false);
+await canDelete.removeSchedule();
+assert.equal(mutations.length,beforeDelete,'Dismiss the deletion confirmation without a write');
+modals.push(true);
+await canDelete.removeSchedule();
+assert.equal(mutations.at(-1).path,'events/delete');
+assert.equal(mutations.at(-1).data.id,'e');
+assert.equal(paths.at(-1),'back');
+beforeDelete=mutations.length;
+for(const denied of [{...base,user:manager},{...base,_localReadOnly:true},{...base,tasks:[{...task,status:'done'}]}]){
+ canDelete.renderState(realV.decorate(denied));
+ assert.equal(canDelete.data.event.canDelete,false);
+ await canDelete.removeSchedule();
+}
+assert.equal(mutations.length,beforeDelete,'Managers, read-only sessions and archived events have no native delete action');
 const limitedCompletion=realV.decorate({...base,events:[{...event,scheduleState:'active',scheduleEnabled:true}],tasks:[{...task,status:'done'}]});assert.equal(limitedCompletion.events[0].scheduleState,'active','server activity completion includes other authorized departments');const limitedArchive=load('events');limitedArchive.renderState(limitedCompletion);limitedArchive.filter({currentTarget:{dataset:{id:'archive'}}});assert.equal(limitedArchive.data.groups[0].allComplete,false);
 const detail=load('event',{id:'e'});detail.renderState({...decorated,events:[{...decorated.events[0],recurrenceGroup:'rg'}]});detail.duplicate();assert.equal(paths.at(-1),'/pages/editor/index?mode=event-copy&id=e');sheets.push(2,1);await detail.activation();assert.equal(mutations.at(-1).path,'events/activation');assert.equal(mutations.at(-1).data.activation,'paused');assert.equal(mutations.at(-1).data.scope,'future');
 const futureEvent={...event,id:'future',date:'2027-01-01',endDate:'2027-01-01',canEditEvent:true},futureTask={...task,id:'future-task',event:'future',scheduleEnabled:false};

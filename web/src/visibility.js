@@ -1,4 +1,4 @@
-import TaskModel from '../../miniprogram/utils/task-model.js';
+import TaskModel from '../shared/task-model.cjs';
 // Department events are private to their department and explicitly assigned participants.
 export function visibleWorkspace(s,u,workspace='') {
  const tasks=(s.tasks||[]).filter(t=>u.role==='admin'||TaskModel.participants(t).includes(u.id)||u.role==='manager'&&(t.depts||[t.dept]).includes(u.dept)||(s.events||[]).some(e=>e.id===t.event&&e.createdBy===u.id));

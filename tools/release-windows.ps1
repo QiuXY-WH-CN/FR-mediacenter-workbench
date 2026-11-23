@@ -1,109 +1,129 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
-    [string]$OutputDirectory = '',
+    [string]$OutputDirectory,
+    [string]$InstallerCompiler = $env:ISCC_PATH,
     [switch]$SkipBuild,
     [switch]$SkipZip,
+    [switch]$SkipInstaller,
     [switch]$WithoutNodeRuntime
 )
 
 $ErrorActionPreference = 'Stop'
-$root = (Resolve-Path (Join-Path $PSScriptRoot '..')).ProviderPath
-$packageVersion = 'v1.0.7'
-$safeName = '冯如学媒协作工作台-' + $packageVersion + '-win-x64'
-if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root ('发布版\' + $safeName) }
-$stage = [IO.Path]::GetFullPath($OutputDirectory)
-$releaseRoot = [IO.Path]::GetFullPath($root)
-$allowedPrefix = $releaseRoot.TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar
-if (-not $stage.StartsWith($allowedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-    throw '发布目录必须位于项目根目录内。'
-}
+$root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).ProviderPath
+$web = Join-Path $root 'web'
+$packageVersion = (Get-Content -LiteralPath (Join-Path $web 'package.json') -Raw | ConvertFrom-Json).version
+if ($packageVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'web/package.json must contain a numeric release version.' }
+$assetName = 'FengruWorkbench-v' + $packageVersion + '-win-x64'
+if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root '发布版' }
+$output = [IO.Path]::GetFullPath($OutputDirectory)
+if ($WithoutNodeRuntime) { $SkipInstaller = $true }
+if ($SkipZip -and $SkipInstaller) { throw 'Select at least one release artifact.' }
 
-function Copy-ReleaseFile {
-    param([string]$Source, [string]$Destination)
-    $parent = Split-Path -Parent $Destination
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-    Copy-Item -LiteralPath $Source -Destination $Destination -Force
-}
+$node = (Get-Command node.exe -ErrorAction Stop).Source
+$nodeVersion = (& $node --version).Trim()
+if ($nodeVersion -notmatch '^v(\d+)\.' -or [int]$Matches[1] -lt 24) { throw 'Node.js 24 or newer is required.' }
+if ((& $node -p 'process.arch') -ne 'x64') { throw 'Build the Windows x64 release with an x64 Node.js runtime.' }
 
-function Assert-NoPrivateMaterial {
-    param([string]$Folder)
-    $blockedNames = @('.git', '.local', 'node_modules', '.env', 'cloudflared-config.yml', 'project.private.config.json')
-    $personalPath = [regex]::Escape((Join-Path 'C:\Users' ([Environment]::UserName)))
-    foreach ($item in Get-ChildItem -LiteralPath $Folder -Recurse -Force -File -ErrorAction SilentlyContinue) {
-        if ($blockedNames -contains $item.Name -or $item.Name -like '*.log' -or $item.Name -like '*.db' -or $item.FullName -match '(?i)(backup|credential|secret|token)') {
-            throw ('发布包包含被禁止的本机文件：' + $item.FullName)
-        }
-        $text = ''
-        try { $text = Get-Content -LiteralPath $item.FullName -Raw -Encoding UTF8 -ErrorAction Stop } catch { continue }
-        if ($text -match ('(?i)' + $personalPath + '|BOOTSTRAP_HASH\s*=\s*[^\r\n]+|BRIDGE_SECRET\s*=\s*[^\r\n]+')) {
-            throw ('发布包疑似包含个人路径或凭据：' + $item.FullName)
+if (-not $SkipInstaller) {
+    if (-not $InstallerCompiler) {
+        $compilerCommand = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+        if ($compilerCommand) { $InstallerCompiler = $compilerCommand.Source }
+        if (-not $InstallerCompiler) {
+            foreach ($folder in @(${env:ProgramFiles(x86)}, $env:ProgramFiles, (Join-Path $env:LOCALAPPDATA 'Programs'))) {
+                if (-not $folder) { continue }
+                foreach ($version in @('Inno Setup 6', 'Inno Setup 7')) {
+                    $candidate = Join-Path $folder ($version + '/ISCC.exe')
+                    if (Test-Path -LiteralPath $candidate -PathType Leaf) { $InstallerCompiler = $candidate; break }
+                }
+                if ($InstallerCompiler) { break }
+            }
         }
     }
+    if (-not $InstallerCompiler -or -not (Test-Path -LiteralPath $InstallerCompiler -PathType Leaf)) {
+        throw 'Install Inno Setup 6.3 or newer and specify -InstallerCompiler with the ISCC.exe path.'
+    }
+    $InstallerCompiler = (Resolve-Path -LiteralPath $InstallerCompiler).ProviderPath
 }
-
-$nodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
-if (-not $nodeCommand) { throw '未找到 Node.js。构建发布版需要 Node.js 24 或更高版本。' }
-$nodePath = $nodeCommand.Source
-$nodeVersion = (& $nodePath --version).Trim()
-if ($nodeVersion -notmatch '^v(\d+)\.' -or [int]$Matches[1] -lt 24) { throw ('Node.js 版本过低：' + $nodeVersion + '；需要 24 或更高版本。') }
 
 if (-not $SkipBuild) {
-    Push-Location $root
-    try {
-        & $nodePath (Join-Path $root 'web/scripts/release-build.mjs')
-        if ($LASTEXITCODE -ne 0) { throw '发布构建失败。' }
-    } finally { Pop-Location }
+    & $node (Join-Path $web 'scripts/release-build.mjs')
+    if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
 }
 
-$bundle = Join-Path $root 'web/dist/release/server.mjs'
-$migration = Join-Path $root 'web/drizzle/0000_huge_boomerang.sql'
-if (-not (Test-Path -LiteralPath $bundle -PathType Leaf)) { throw '缺少 web/dist/release/server.mjs，请先运行发布构建。' }
-if (-not (Test-Path -LiteralPath $migration -PathType Leaf)) { throw '缺少数据库初始化迁移文件。' }
+New-Item -ItemType Directory -Force -Path $output | Out-Null
+$output = (Resolve-Path -LiteralPath $output).ProviderPath
+$stageId = '.workbench-stage-' + [Guid]::NewGuid().ToString('N')
+$scratch = [IO.Path]::GetFullPath((Join-Path $output $stageId))
+if ([IO.Path]::GetDirectoryName($scratch) -ne $output.TrimEnd('\', '/')) { throw 'Invalid staging path.' }
+New-Item -ItemType Directory -Path $scratch | Out-Null
+$stage = Join-Path $scratch $assetName
+try {
+    New-Item -ItemType Directory -Path $stage | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $stage 'drizzle') | Out-Null
+    Copy-Item -LiteralPath (Join-Path $web 'dist/release/server.mjs') -Destination $stage
+    $migrations = Get-ChildItem -LiteralPath (Join-Path $web 'drizzle') -Filter '*.sql' -File
+    if (-not $migrations) { throw 'The release needs at least one database migration.' }
+    $migrations | Copy-Item -Destination (Join-Path $stage 'drizzle')
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot '启动工作台.cmd'), (Join-Path $PSScriptRoot 'start-workbench.ps1') -Destination $stage
+    Copy-Item -LiteralPath (Join-Path $web 'node_modules/bcryptjs/LICENSE') -Destination (Join-Path $stage 'LICENSE-bcryptjs.txt')
 
-if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
-New-Item -ItemType Directory -Force -Path $stage | Out-Null
-New-Item -ItemType Directory -Force -Path (Join-Path $stage 'drizzle') | Out-Null
-Copy-ReleaseFile $bundle (Join-Path $stage 'server.mjs')
-Copy-ReleaseFile $migration (Join-Path $stage 'drizzle/0000_huge_boomerang.sql')
-Copy-ReleaseFile (Join-Path $root 'tools/启动工作台.cmd') (Join-Path $stage '启动工作台.cmd')
-Copy-ReleaseFile (Join-Path $root 'tools/启动工作台.ps1') (Join-Path $stage '启动工作台.ps1')
-Copy-ReleaseFile (Join-Path $root 'tools/安装工作台.ps1') (Join-Path $stage '安装工作台.ps1')
-Copy-ReleaseFile (Join-Path $root 'tools/卸载工作台.ps1') (Join-Path $stage '卸载工作台.ps1')
-@{
-    name = '冯如学媒协作工作台'
-    version = $packageVersion
-    platform = 'windows-x64'
-    generatedAt = (Get-Date).ToUniversalTime().ToString('o')
-    requires = if ($WithoutNodeRuntime) { 'Node.js 24 or newer on PATH' } else { 'bundled Node.js 24 runtime' }
-} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stage 'release.json') -Encoding UTF8
-
-if (-not $WithoutNodeRuntime) {
-    $runtime = Join-Path $stage 'runtime'
-    New-Item -ItemType Directory -Force -Path $runtime | Out-Null
-    Copy-ReleaseFile $nodePath (Join-Path $runtime 'node.exe')
-    $nodeDir = Split-Path -Parent $nodePath
-    foreach ($license in @('LICENSE', 'LICENSE.txt', 'LICENSE.md')) {
-        $candidate = Join-Path $nodeDir $license
-        if (Test-Path -LiteralPath $candidate -PathType Leaf) { Copy-ReleaseFile $candidate (Join-Path $runtime $license) }
+    if (-not $WithoutNodeRuntime) {
+        if ((Get-AuthenticodeSignature -LiteralPath $node).Status -ne 'Valid') { throw 'Build with an Authenticode-signed Node.js runtime.' }
+        $runtime = Join-Path $stage 'runtime'
+        New-Item -ItemType Directory -Path $runtime | Out-Null
+        Copy-Item -LiteralPath $node -Destination (Join-Path $runtime 'node.exe')
+        $runtimeLicense = @('LICENSE', 'LICENSE.txt', 'LICENSE.md') | ForEach-Object {
+            Join-Path (Split-Path -Parent $node) $_
+        } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+        if (-not $runtimeLicense) { throw 'The bundled Node.js distribution must include its LICENSE file.' }
+        Copy-Item -LiteralPath $runtimeLicense -Destination (Join-Path $runtime 'LICENSE.txt')
     }
-}
 
-@'
-# 冯如学媒协作工作台 Windows 发布版
+    @{
+        name = '冯如学媒协作工作台'
+        version = 'v' + $packageVersion
+        platform = 'windows-x64'
+        node = if ($WithoutNodeRuntime) { 'Node.js 24 or newer on PATH' } else { $nodeVersion }
+    } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stage 'release.json') -Encoding UTF8
 
-双击“启动工作台.cmd”即可启动本机服务，然后打开 http://127.0.0.1:8766/。
-首次使用请在网页中使用部署环境提供的初始化流程；发布包不会携带账号、数据库、日志、隧道凭据或个人配置。
+    @'
+冯如学媒协作工作台 Windows 发布版
 
-“安装工作台.ps1”会把当前发布目录复制到当前用户的 LocalAppData，并在桌面创建快捷方式。
-业务数据和日志只会写入发布目录下的 .local 文件夹；移动整个发布目录即可迁移本机数据。
+双击“启动工作台.cmd”，或从开始菜单启动工作台。首次启动会在浏览器打开本机初始化页面，
+请在页面中创建负责人账号。服务只监听本机 127.0.0.1，默认端口为 8766。
+
+要停止后台服务，请从开始菜单选择“停止冯如学媒协作工作台”，或在发布目录运行：
+  .\启动工作台.cmd -Stop
+升级和卸载前请先停止服务。卸载保留 .local 目录，业务数据和运行日志保存在其中。
+迁移业务数据前先停止两台设备的服务，再备份并迁移 .local/preview.db。
 '@ | Set-Content -LiteralPath (Join-Path $stage '使用说明.txt') -Encoding UTF8
 
-Assert-NoPrivateMaterial -Folder $stage
-$zip = Join-Path (Split-Path -Parent $stage) ($safeName + '.zip')
-if (-not $SkipZip) {
-    if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
-    Compress-Archive -LiteralPath $stage -DestinationPath $zip -CompressionLevel Optimal
-}
+    & $node (Join-Path $PSScriptRoot 'privacy-audit.mjs') --strict $stage
+    if ($LASTEXITCODE -ne 0) { throw 'Release payload privacy check failed.' }
 
-Write-Host ('发布目录：' + $stage)
-if (-not $SkipZip) { Write-Host ('ZIP：' + $zip) }
+    $artifacts = @()
+    if (-not $SkipZip) {
+        $zip = Join-Path $scratch ($assetName + '.zip')
+        Compress-Archive -LiteralPath $stage -DestinationPath $zip -CompressionLevel Optimal
+        $artifacts += $zip
+    }
+    if (-not $SkipInstaller) {
+        & $InstallerCompiler /Qp ("/DAppVersion=$packageVersion") ("/DPayloadDir=$stage") ("/DArtifactName=$assetName-setup") ("/O$scratch") (Join-Path $PSScriptRoot 'workbench-installer.iss')
+        $installer = Join-Path $scratch ($assetName + '-setup.exe')
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $installer -PathType Leaf)) { throw 'Windows installer compilation failed.' }
+        $artifacts += $installer
+    }
+
+    $checksums = Join-Path $scratch ($assetName + '-SHA256SUMS.txt')
+    $artifacts | ForEach-Object {
+        (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path -Leaf $_)
+    } | Set-Content -LiteralPath $checksums -Encoding Ascii
+    foreach ($artifact in ($artifacts + $checksums)) {
+        Move-Item -LiteralPath $artifact -Destination (Join-Path $output (Split-Path -Leaf $artifact)) -Force
+        Write-Host ('Built ' + (Split-Path -Leaf $artifact))
+    }
+} finally {
+    if ([IO.Path]::GetDirectoryName($scratch) -eq $output.TrimEnd('\', '/') -and (Split-Path -Leaf $scratch) -eq $stageId) {
+        Remove-Item -LiteralPath $scratch -Recurse -Force
+    }
+}

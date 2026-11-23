@@ -1,5 +1,5 @@
-import TaskModel from '../../miniprogram/utils/task-model.js';
-import ScheduleModel from '../../miniprogram/utils/schedule-model.js';
+import TaskModel from '../shared/task-model.cjs';
+import ScheduleModel from '../shared/schedule-model.cjs';
 export const standardChecks=['核对活动信息与交付要求','整理成果与交接说明'];
 export async function activeTaskPeople(db){return (await db.prepare("SELECT id,name,dept,role,status,owner FROM users WHERE status='active'").all()).results}
 export function readIds(input,scalar,old,fail){const list=input===undefined?(scalar===undefined?old:[scalar]):input;if(!Array.isArray(list)||!list.length||list.length>12||list.some(id=>typeof id!=='string'||!id)||new Set(list).size!==list.length)fail(400,'请选择 1—12 位不重复的成员');return list}

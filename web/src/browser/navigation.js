@@ -167,7 +167,16 @@ function nextTour(){if(!tour)return;tour.index++;showTourStep()}
 function prevTour(){if(!tour)return;tour.index=Math.max(0,tour.index-1);showTourStep()}
 function startTour(){if(!user||user.status!=='active')return;tour={index:0};showTourStep()}
 function showTourStep(){const steps=tourSteps();if(!tour||tour.index>=steps.length){markTourSeen();stopTour();return}const step=steps[tour.index];if($('#dialog')?.open)$('#dialog').close();if(step.view&&view!==step.view){view=step.view;render()}document.querySelectorAll('.tour-target').forEach(el=>el.classList.remove('tour-target'));let target=step.sel?document.querySelector(step.sel):null;if(!target)target=document.querySelector('main')||document.body;target.classList.add('tour-target');target.scrollIntoView({behavior:'smooth',block:'center'});let tip=document.getElementById('tour-tip');if(!tip){tip=document.createElement('div');tip.id='tour-tip';tip.setAttribute('role','dialog');document.body.append(tip)}const dots=steps.map((s,i)=>`<i class="${i===tour.index?'on':i<tour.index?'done':''}"></i>`).join('');tip.innerHTML=`<button type="button" class="tour-close" data-tour-close aria-label="关闭引导">×</button><span class="tour-stepno">第 ${tour.index+1} / ${steps.length} 步</span><h3>${esc(step.title)}</h3><p>${esc(step.body)}</p><div class="tour-dots">${dots}</div><div class="tour-actions">${tour.index>0?'<button type="button" class="secondary" data-tour-prev>上一步</button>':''}<button type="button" class="text-btn" data-tour-skip>跳过</button><button type="button" class="primary" data-tour-next>${tour.index===steps.length-1?'完成':'下一步'}</button></div>`;positionTourTip(tip,target)}
-function positionTourTip(tip,target){const r=target.getBoundingClientRect();tip.style.left=Math.max(12,Math.min(window.innerWidth-tip.offsetWidth-12,r.left+r.width/2-tip.offsetWidth/2))+'px';const below=r.bottom+12;if(below+tip.offsetHeight<window.innerHeight-12)tip.style.top=below+'px';else tip.style.top=Math.max(12,r.top-tip.offsetHeight-12)+'px'}
+function positionTourTip(tip,target){
+  const rect=target.getBoundingClientRect(),nav=target.closest('nav');
+  const maxLeft=window.innerWidth-tip.offsetWidth-12,maxTop=window.innerHeight-tip.offsetHeight-12;
+  const beside=nav?nav.getBoundingClientRect().right+12:Infinity;
+  const left=beside<=maxLeft?beside:rect.left+rect.width/2-tip.offsetWidth/2;
+  const below=rect.bottom+12;
+  const top=beside<=maxLeft?rect.top:(below<=maxTop?below:rect.top-tip.offsetHeight-12);
+  tip.style.left=Math.max(12,Math.min(maxLeft,left))+'px';
+  tip.style.top=Math.max(12,Math.min(maxTop,top))+'px';
+}
 function maybeStartTour(){if(tourChecked||tour||!user||user.status!=='active')return;tourChecked=true;if(tourSeen())return;setTimeout(()=>{if(!tour&&!document.getElementById('sop-fullscreen')&&document.querySelector('nav'))startTour()},900)}
 document.addEventListener('click',e=>{
  if(e.target.closest?.('[data-tour-close]')){markTourSeen();stopTour();return}

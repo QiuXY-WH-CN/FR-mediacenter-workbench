@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
-const require=createRequire(import.meta.url),E=require('../../miniprogram/utils/particle-engine.js'),source=await readFile(new URL('../src/recovery-v105.js',import.meta.url),'utf8');
+const require=createRequire(import.meta.url),E=require('../../miniprogram/utils/particle-engine.js'),source=await readFile(new URL('../src/browser/recovery.js',import.meta.url),'utf8');
 const privateMarker='PRIVATE_ACCOUNT_TOKEN_TASK_MESSAGE';
 const stored=new Map([['fr.language','en'],['fr.token',privateMarker],['fr.connection',privateMarker],['fr.preferences.account',privateMarker],['fr.display','{broken']]);
 const queue=new Map();let timerId=0,responseMode='ok',posts=0,canvasThrows=false;

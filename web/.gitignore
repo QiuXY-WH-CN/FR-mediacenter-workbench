@@ -2,6 +2,8 @@ node_modules/
 .local/
 .sites-runtime/
 work/
-src/assets.generated.js
 .env
 .env.local
+
+# Legacy builds can leave this generated file in place.
+src/assets.generated.js

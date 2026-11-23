@@ -212,6 +212,15 @@ function Test-WorkbenchTunnelConfig {
     return (Test-Path -LiteralPath $credentialPath -PathType Leaf)
 }
 
+function Get-WorkbenchTunnelRoute {
+    param([string]$ConfigPath)
+    if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) { return $null }
+    $config = Get-Content -LiteralPath $ConfigPath -Raw -Encoding UTF8 -ErrorAction Stop
+    $route = [regex]::Match($config, '(?im)^[ \t]*-[ \t]*hostname:[ \t]*["'']?([a-z0-9-]+(?:\.[a-z0-9-]+)+)["'']?[ \t]*(?:#.*)?\r?$')
+    if ($route.Success) { return 'https://' + $route.Groups[1].Value }
+    return $null
+}
+
 function Start-WorkbenchTunnel {
     param([string]$WebRoot, [string]$LocalUrl, [switch]$QuickTunnel)
     $logDir = Join-Path $WebRoot '.local'
@@ -246,12 +255,14 @@ function Start-WorkbenchServices {
     $tunnelStarted = $false
     $domainReady = $false
     $namedTunnel = $false
-    $publicUrl = 'https://fengrumedia.dpdns.org'
+    $publicUrl = $null
     if ($IncludeTunnel) {
         try { $tunnelStarted = Start-WorkbenchTunnel -WebRoot $webPath -LocalUrl $origin.local -QuickTunnel:$QuickTunnel }
         catch { Write-Warning '公网隧道启动失败，本机仍可访问。请检查 .local/cloudflared-domain.err.log。' }
-        $namedTunnel = Test-WorkbenchTunnelConfig -ConfigPath (Join-Path $webPath 'cloudflared-config.yml') -WebRoot $webPath
-        if ($tunnelStarted -and $namedTunnel) { $domainReady = Get-WorkbenchHealth -Url $publicUrl -TimeoutSeconds 8 }
+        $configPath = Join-Path $webPath 'cloudflared-config.yml'
+        $namedTunnel = Test-WorkbenchTunnelConfig -ConfigPath $configPath -WebRoot $webPath
+        if ($namedTunnel) { $publicUrl = Get-WorkbenchTunnelRoute -ConfigPath $configPath }
+        if ($tunnelStarted -and $publicUrl) { $domainReady = Get-WorkbenchHealth -Url $publicUrl -TimeoutSeconds 8 }
     }
     $status = [pscustomobject]@{ local = $origin.local; localReady = $true; serverId = $origin.serverId; domain = $publicUrl; domainReady = [bool]$domainReady; tunnelStarted = [bool]$tunnelStarted; namedTunnel = [bool]$namedTunnel; updatedAt = (Get-Date -Format s) }
     $status | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $webPath '.local/cloud-status.json') -Encoding UTF8

@@ -52,7 +52,9 @@
     "test:mini:inputs": "node scripts/mini-input-lifecycle-test.mjs",
     "test:schedules": "node scripts/schedule-v107-test.mjs && node scripts/schedule-audit-v107-test.mjs && node scripts/template-policy-test.mjs",
     "test:schedules:browser": "node scripts/schedules-v107-browser-test.mjs",
-    "test:mini:schedules": "node scripts/native-schedule-v107-test.mjs"
+    "test:mini:schedules": "node scripts/native-schedule-v107-test.mjs",
+    "prepare:mini": "node scripts/prepare-mini.mjs",
+    "verify": "node scripts/verify.mjs"
   },
   "engines": {
     "node": ">=24"
@@ -65,5 +67,5 @@
     "drizzle-kit": "0.31.5",
     "esbuild": "0.25.11"
   },
-  "version": "1.0.7"
+  "version": "1.1.0"
 }

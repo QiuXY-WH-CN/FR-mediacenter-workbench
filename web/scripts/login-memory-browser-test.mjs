@@ -3,7 +3,7 @@ import http from 'node:http';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
-const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href),source=await readFile('src/login-v105.js','utf8'),css=await readFile('src/login-v105.css','utf8');
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE).href),source=await readFile('src/browser/login.js','utf8'),css=await readFile('src/browser/workbench.css','utf8');
 const origin='http://127.0.0.1:8903',secret='Synthetic-only-browser-secret-42';
 const fixture=`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{--accent:#e77b24;--muted:#777;--surface:#fff;--border:#ddd}body{margin:20px;max-width:450px}input{max-width:100%;box-sizing:border-box}.field{display:grid;margin-bottom:16px}button{min-height:44px}${css}</style><main id="app"></main><button data-switch-account>Switch</button><script>
  let busy=false,authMode='login',user=null;window.locale='zh-CN';const uiLanguage=()=>window.locale;window.fixture={active:true,reject:false,reviewMode:false,records:[],stores:[],silent:0};

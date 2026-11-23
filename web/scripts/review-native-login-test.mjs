@@ -24,7 +24,7 @@ const gateway=createMiniGateway({worker,DB}),cache=new Map(),schemaErrors=[];
 const config={transport:'direct',directBaseUrl:'https://native-login.test'};
 const recovery={normalizeConnection:()=>config,safeRead:(key,fallback)=>cache.has(key)?cache.get(key):fallback,safeWrite:(key,val)=>{cache.set(key,val);return true},safeRemove:key=>{cache.delete(key);return true},applySettings:s=>s,saveDisplay(){},capture:(_,code)=>schemaErrors.push(code)};
 const wx={request(options){gateway(new Request(options.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(options.data)}),{DB,DISABLE_TELEMETRY:true}).then(async r=>options.success({statusCode:r.status,data:await r.json()})).catch(options.fail)}};
-const context={module:{exports:{}},require:path=>path.includes('login-memory')?{forgetPassword(){}}:path.includes('recovery')?recovery:config,wx,setTimeout,clearTimeout};
+const context={module:{exports:{}},require:path=>path.includes('login-memory')?{realm:c=>c.directBaseUrl,forgetPassword(){}}:path.includes('recovery')?recovery:config,wx,setTimeout,clearTimeout};
 vm.runInNewContext(await readFile('../miniprogram/services/api.js','utf8'),context);const api=context.module.exports;
 try{
  const info=await api.info();assert.equal(info.reviewMode,true);assert.equal(info.user,null);

@@ -1,139 +1,138 @@
 #!/usr/bin/env node
 
-/**
- * Check the files that would be included in a Git-based release for
- * machine paths, credentials and other identity-bearing values.
- *
- * Usage:
- *   node tools/privacy-audit.mjs
- *   node tools/privacy-audit.mjs --strict path/to/staging
- *
- * The default scan follows Git's tracked + untracked-but-not-ignored file
- * list, so .local/, databases and other local runtime data are excluded by
- * .gitignore. Pass a directory to audit a release staging directory instead.
- */
-
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
-
-const args = process.argv.slice(2);
-const strict = args.includes('--strict');
-const requestedRoot = args.find((arg) => !arg.startsWith('--'));
-const root = resolve(requestedRoot || process.cwd());
-
-const textExtensions = new Set([
-  '.c', '.cc', '.cmd', '.config', '.css', '.csv', '.env', '.html', '.ini',
-  '.js', '.json', '.md', '.mjs', '.ps1', '.py', '.sh', '.sql', '.ts', '.tsx',
-  '.txt', '.wxml', '.wxss', '.xml', '.yaml', '.yml'
-]);
+import { lstatSync, readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 const checks = [
-  {
-    label: 'absolute Windows user path',
-    expression: /[A-Za-z]:[\\/]Users[\\/](?!(?:YOUR_USER|USERNAME)(?:[\\/]|$))[^\\/\s"'`<>]+/g
-  },
-  {
-    label: 'absolute Unix user path',
-    expression: /\/(?:Users|home)\/[A-Za-z0-9._-]+(?:\/[^\s"'`<>]+)+/g
-  },
-  {
-    label: 'private key material',
-    expression: /-----BEGIN (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----/g
-  },
-  {
-    label: 'credential-like assignment',
-    expression: /\b(?:api[_-]?key|client[_-]?secret|access[_-]?token|refresh[_-]?token)\b\s*[:=]\s*["'][^"']{12,}["']/gi
-  },
-  {
-    label: 'high-entropy secret prefix',
-    expression: /\b(?:sk|rk|ghp|github_pat|xox[baprs])-[A-Za-z0-9_-]{12,}\b/g
-  }
+  ['absolute Windows user path', /\b[A-Z]:[\\/]+Users[\\/]+(?!(?:YOUR_USER|USERNAME)(?:[\\/]|$))[^\\/\s"'`<>]+/gi],
+  ['absolute Unix user path', /\/(?:Users|home)\/[A-Za-z0-9._-]+(?:\/[^\s"'`<>]+)+/g],
+  ['private key material', /-----BEGIN (?:[A-Z0-9]+ )?PRIVATE KEY-----/g],
+  ['credential-like assignment', /\b(?:api[_-]?key|client[_-]?secret|app[_-]?secret|access[_-]?token|refresh[_-]?token|bridge[_-]?secret|bootstrap[_-]?hash)\b["']?\s*[:=]\s*(?:["'](?!test-|fixture-|YOUR_|EXAMPLE_)[^"'\r\n]{12,}["']|[A-Za-z0-9_-]{20,}(?=[\r\n]|$))/gi],
+  ['secret token prefix', /\b(?:sk-(?:proj-)?|rk-|gh[pousr]_|github_pat_|xox[baprs]-|AKIA)[A-Za-z0-9_-]{12,}\b/g]
 ];
-
 const strictChecks = [
-  {
-    label: 'WeChat app identifier',
-    expression: /\bwx[0-9a-f]{16,}\b/gi
-  },
-  {
-    label: 'named tunnel or dynamic public domain',
-    expression: /\b(?:[a-z0-9-]+\.(?:dpdns|duckdns)\.org|[a-z0-9-]+\.trycloudflare\.com)\b/gi
-  }
+  ['WeChat deployment identifier', /\b(?:wx[a-f0-9]{16}|gh_[a-f0-9]{12}|cloud[0-9]+-[a-z0-9]{8,})\b/gi],
+  ['Cloudflare tunnel identifier', /\b[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\.cfargotunnel\.com\b/gi],
+  ['named tunnel or dynamic public domain', /\b[a-z0-9-]+\.(?:dpdns\.org|duckdns\.org|trycloudflare\.com)\b/gi]
 ];
-
-function gitFiles() {
-  try {
-    const output = execFileSync('git', ['-C', root, 'ls-files', '-co', '--exclude-standard', '-z'], {
-      encoding: 'utf8',
-      maxBuffer: 16 * 1024 * 1024
-    });
-    return output.split('\0').filter(Boolean).map((file) => resolve(root, file));
-  } catch {
-    return [];
-  }
-}
-
-function fallbackFiles(directory) {
-  const files = [];
-  function walk(current) {
-    for (const entry of readdirSync(current, { withFileTypes: true })) {
-      if (entry.name === '.git' || entry.name === 'node_modules') continue;
-      const file = join(current, entry.name);
-      if (entry.isDirectory()) walk(file);
-      else if (entry.isFile()) files.push(resolve(file));
-    }
-  }
-  walk(directory);
-  return files;
-}
-
-function filesToScan() {
-  if (requestedRoot) {
-    try {
-      return fallbackFiles(root);
-    } catch {
-      return [];
-    }
-  }
-  return gitFiles();
-}
-
-function lineNumber(content, offset) {
-  return content.slice(0, offset).split('\n').length;
-}
-
-const files = filesToScan();
+const forbiddenParts = new Set(['.git', '.local', '.codex', '.cloudflared', 'node_modules', 'cloudflared-config.yml', 'project.private.config.json']);
 const findings = [];
-for (const file of files) {
-  if (!existsSync(file) || !statSync(file).isFile()) continue;
-  if (!textExtensions.has(file.slice(file.lastIndexOf('.')).toLowerCase())) continue;
-  if (statSync(file).size > 2 * 1024 * 1024) continue;
-  const content = readFileSync(file, 'utf8');
-  if (content.includes('\0')) continue;
-  const fileChecks = strict ? [...checks, ...strictChecks] : checks;
-  for (const check of fileChecks) {
-    check.expression.lastIndex = 0;
-    let match;
-    while ((match = check.expression.exec(content)) !== null) {
-      findings.push({
-        file: relative(root, file) || file,
-        line: lineNumber(content, match.index),
-        label: check.label,
-        sample: match[0].length > 100 ? `${match[0].slice(0, 97)}...` : match[0]
-      });
-      if (!check.expression.global) break;
+let scanned = 0;
+
+function git(root, args, encoding = 'utf8') {
+  return execFileSync('git', ['-C', root, ...args], {
+    encoding,
+    maxBuffer: 128 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'ignore']
+  });
+}
+
+function find(file, label, line = 0, revision = '') {
+  findings.push({ file, label, line, revision });
+}
+
+function forbidden(path) {
+  return path.toLowerCase().split(/[\\/]/).some(part => forbiddenParts.has(part)
+    || (part !== '.env.example' && /^\.env(?:\.|$)/.test(part))
+    || /\.(?:log|db(?:-.+)?|sqlite3?(?:-.+)?|bak|tmp|pem|key|pfx|p12)$/.test(part));
+}
+
+function scan(file, content, strict, revision) {
+  scanned++;
+  const prefix = content.subarray(0, 2).toString('hex');
+  let source;
+  if (prefix === 'fffe') source = content.subarray(2).toString('utf16le');
+  else if (prefix === 'feff') source = new TextDecoder('utf-16be').decode(content);
+  else if (!content.subarray(0, 65536).includes(0)) source = content.toString('utf8');
+  else return;
+  for (const [label, expression] of strict ? [...checks, ...strictChecks] : checks) {
+    for (const match of source.matchAll(expression)) {
+      const line = source.slice(0, match.index).split('\n').length;
+      find(file, label, line, revision);
     }
   }
 }
 
-if (findings.length) {
-  console.error(`Privacy audit found ${findings.length} finding(s)${strict ? ' (strict mode)' : ''}:`);
-  for (const finding of findings) {
-    console.error(`- ${finding.file}:${finding.line} [${finding.label}] ${finding.sample}`);
+function scanPath(root, name, strict, missingAllowed = false) {
+  if (forbidden(name)) {
+    find(name, 'local data or credential file');
+    return;
   }
-  console.error('\nRemove the value, move it to ignored local configuration, or document an explicit release-safe allowlist.');
-  process.exitCode = 1;
-} else {
-  console.log(`Privacy audit passed${strict ? ' (strict mode)' : ''}: ${files.length} file(s) scanned.`);
+  const file = join(root, name);
+  let entry;
+  try {
+    entry = lstatSync(file);
+  } catch (error) {
+    if (missingAllowed && error.code === 'ENOENT') return;
+    throw error;
+  }
+  if (entry.isSymbolicLink()) find(name, 'symbolic link');
+  else if (entry.isDirectory()) {
+    for (const child of readdirSync(file)) scanPath(root, join(name, child), strict);
+  } else if (entry.isFile()) scan(name, readFileSync(file), strict);
+  else find(name, 'non-regular file');
+}
+
+function scanRange(root, range, strict) {
+  const commits = git(root, ['rev-list', '--reverse', range, '--']).trim().split(/\s+/).filter(Boolean);
+  for (const revision of commits) {
+    const entries = git(root, [
+      'diff-tree', '--root', '-m', '--no-commit-id', '--no-renames', '--no-abbrev', '--raw',
+      '--diff-filter=ACMT', '-r', '-z', revision, '--'
+    ]).split('\0');
+    const seen = new Set();
+    for (let i = 0; i < entries.length - 1; i += 2) {
+      const [, mode, , blob] = entries[i].split(' ');
+      const file = entries[i + 1];
+      const key = file + '\0' + blob;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (forbidden(file)) find(file, 'local data or credential file', 0, revision);
+      else if (!['100644', '100755'].includes(mode)) find(file, 'non-regular file', 0, revision);
+      else scan(file, git(root, ['cat-file', 'blob', blob], 'buffer'), strict, revision);
+    }
+  }
+  return commits.length;
+}
+
+function main(args) {
+  const strict = args.includes('--strict');
+  const options = args.filter(arg => arg !== '--strict');
+  let commits;
+  if (options[0] === '--range' && options.length === 2 && /^[^-\s][^\s]*\.\.[^.\s][^\s]*$/.test(options[1])) {
+    commits = scanRange(process.cwd(), options[1], strict);
+  } else if (options.length === 1 && !options[0].startsWith('-')) {
+    const root = resolve(options[0]);
+    if (!lstatSync(root).isDirectory()) throw new Error('Expected a staging directory.');
+    for (const file of readdirSync(root)) scanPath(root, file, strict);
+    if (!scanned && !findings.length) throw new Error('Staging directory is empty.');
+  } else if (!options.length) {
+    const root = git(process.cwd(), ['rev-parse', '--show-toplevel']).trim();
+    const files = git(root, ['ls-files', '-co', '--exclude-standard', '-z']).split('\0').filter(Boolean);
+    for (const name of new Set(files)) scanPath(root, name, strict, true);
+  } else {
+    throw new Error('Usage: node tools/privacy-audit.mjs [--strict] [staging-dir | --range BASE..HEAD]');
+  }
+
+  if (findings.length) {
+    console.error('Privacy audit found ' + findings.length + ' finding(s):');
+    for (const {file, line, label, revision} of findings) {
+      const location = JSON.stringify(file) + (line ? ':' + line : '');
+      const source = revision ? ' (' + revision.slice(0, 8) + ')' : '';
+      console.error('- ' + location + source + ' [' + label + ']');
+    }
+    process.exitCode = 1;
+  } else {
+    const rangeSummary = commits === undefined ? '' : ' across ' + commits + ' commit(s)';
+    console.log('Privacy audit passed' + (strict ? ' (strict mode)' : '') + ': ' + scanned + ' file(s) scanned' + rangeSummary + '.');
+  }
+}
+
+try {
+  main(process.argv.slice(2));
+} catch {
+  console.error('Privacy audit could not read the repository, requested Git range or staging directory.');
+  console.error('Usage: node tools/privacy-audit.mjs [--strict] [staging-dir | --range BASE..HEAD]');
+  process.exitCode = 2;
 }

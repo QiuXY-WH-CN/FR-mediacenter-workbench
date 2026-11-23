@@ -28,15 +28,15 @@ const state = {
   tasks: [{id:'t',name:'PRIVATE_TASK_NAME',event:'e',owner:'u',receiver:'u',dept:'办公室',due:'2026-10-06T18:00',status:'active'}],
   ledger:[{user:'u',points:7}], notices:[], ranking:[]
 };
-let cleared = 0;
+let cleared = 0, session = 'PRIVATE_SESSION';
 Object.assign(V.api, {
-  token: () => 'PRIVATE_SESSION',
+  token: () => session,
   getState: () => state,
   config: () => ({transport:'direct'}),
   subscribe: () => () => {},
   refresh: async () => state,
-  call: async (path, data) => { calls.push([path, data]); return {bound:true}; },
-  clear: () => { cleared++; }
+  call: async (path, data) => { calls.push([path, data]); if(path==='logout')V.api.clear(); return {bound:true}; },
+  clear: () => { cleared++; session=''; }
 });
 const mount = (spec, route) => {
   const page = {...spec, data: structuredClone(spec.data || {}), route};
@@ -106,8 +106,11 @@ profile.go({currentTarget:{dataset:{url:'/pages/profile/settings'}}}); assert.de
 profile.go({currentTarget:{dataset:{url:'/pages/profile/preferences'}}}); assert.deepEqual(routes.at(-1), ['push','/pages/profile/preferences']);
 await profile.switchAccount(); assert.equal(calls.at(-1)[0], 'logout'); assert.equal(cleared, 1); assert.deepEqual(routes.at(-1), ['reset','/pages/auth/index']);
 await profile.logout(); assert.equal(cleared, 2);
-V.api.call = async () => { throw new Error('Network unavailable'); };
+V.api.call = async () => { V.api.clear(); throw new Error('Network unavailable'); };
 await profile.logout(); assert.equal(cleared, 3); assert.deepEqual(routes.at(-1), ['reset','/pages/auth/index']);
+V.api.call = async () => { session='NEW_SESSION'; throw new Error('Session changed'); };
+const beforeStaleLogout=routes.length;
+await profile.logout(); assert.equal(cleared, 3); assert.equal(routes.length,beforeStaleLogout);
 const markup = readFileSync('../miniprogram/pages/profile/index.wxml','utf8');
 assert.ok(markup.includes('open-type="share"'));
 assert.ok(markup.includes('bindtap="switchAccount"'));

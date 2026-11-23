@@ -36,9 +36,7 @@ Page(V.page({
       try {
         await V.api.call('logout', {});
       } finally {
-        // Clear the current device even if the network or session has expired.
-        V.api.clear();
-        wx.reLaunch({ url: '/pages/auth/index' });
+        if (!V.api.token()) wx.reLaunch({ url: '/pages/auth/index' });
       }
     });
   },

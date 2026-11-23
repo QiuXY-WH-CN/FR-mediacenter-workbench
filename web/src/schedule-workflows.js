@@ -1,5 +1,5 @@
-import ScheduleModel from '../../miniprogram/utils/schedule-model.js';
-import TaskModel from '../../miniprogram/utils/task-model.js';
+import ScheduleModel from '../shared/schedule-model.cjs';
+import TaskModel from '../shared/task-model.cjs';
 import {validateTaskParties,activeTaskPeople} from './task-actions.js';
 const DAY=86400000;
 export function audit(record,u,created=false){const now=new Date().toISOString();if(created){record.createdBy=u.id;record.createdByName=u.name||'';record.createdAt=now}record.updatedBy=u.id;record.updatedByName=u.name||'';record.updatedAt=now;return record}

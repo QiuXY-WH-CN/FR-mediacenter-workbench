@@ -263,9 +263,11 @@ Page(Share.page({
     try {
       await api.call('logout', {});
     } catch (e) {
-      // 即使服务端会话已失效，也继续清理本地状态。
+      if (e.code === 'SESSION_CHANGED') {
+        this.setData({ busy: false });
+        return;
+      }
     }
-    api.clear();
     this.clearSecurity();
     this.setData({
       busy: false,

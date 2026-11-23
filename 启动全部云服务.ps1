@@ -16,7 +16,8 @@ try {
     if ($status.domainReady) {
         Write-Host ('公网已验证：' + $status.domain) -ForegroundColor Green
     } elseif ($status.tunnelStarted -and $status.namedTunnel) {
-        Write-Host ('公网连接正在建立：' + $status.domain) -ForegroundColor Yellow
+        if ($status.domain) { Write-Host ('公网连接正在建立：' + $status.domain) -ForegroundColor Yellow }
+        else { Write-Host '固定隧道已启动，请核对本机配置中的 ingress hostname。' -ForegroundColor Yellow }
         Write-Host '尚未通过公网健康检查，请查看 tunnel 日志或稍后重新运行。' -ForegroundColor Yellow
     } elseif ($status.tunnelStarted) {
         Write-Host '临时公网隧道正在建立，地址请查看 .local/cloudflared-quick.err.log。' -ForegroundColor Yellow

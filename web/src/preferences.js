@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
-import ParticleEngine from '../../miniprogram/utils/particle-engine.js';
-import TaskModel from '../../miniprogram/utils/task-model.js';
+import ParticleEngine from '../shared/particle-engine.cjs';
+import TaskModel from '../shared/task-model.cjs';
 export const defaults={workspace:'',themeColor:'#e77b24',appearance:'light',particles:'constellation',particleDensity:48,rotationMinutes:5,motion:true,language:'zh-CN',fontScale:1,particleSystem:{...ParticleEngine.defaults}};
 export async function ensurePreferences(db){
  await db.prepare("CREATE TABLE IF NOT EXISTS member_preferences (user TEXT PRIMARY KEY,data TEXT NOT NULL)").run();

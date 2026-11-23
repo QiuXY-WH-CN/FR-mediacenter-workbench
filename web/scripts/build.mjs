@@ -1,40 +1,80 @@
-import {readFile,writeFile,mkdir,readdir} from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
-const webRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-process.chdir(webRoot);
+import metadata from '../package.json' with { type: 'json' };
+
+// Preserve classic-script order while the UI modules share the same page state.
+const browserModules = [
+  'app', 'navigation', 'community', 'workspace', 'organization', 'recovery',
+  'statistics', 'login', 'avatar', 'tasks', 'presence', 'schedules'
+];
+const sharedModules = {
+  'schedule-model': 'ScheduleModel',
+  'template-policy': 'TemplatePolicy',
+  organization: 'OrganizationModel',
+  'stats-model': 'StatsModel',
+  'particle-engine': 'ParticleEngine',
+  localization: 'Localization',
+  'task-model': 'WorkspaceModel'
+};
+const webRoot = fileURLToPath(new URL('../', import.meta.url));
+const read = (file, encoding = 'utf8') => readFile(path.join(webRoot, file), encoding);
+const release = 'v' + metadata.version;
+const browser = await Promise.all(browserModules.map(name => read('src/browser/' + name + '.js')));
+const shared = await Promise.all(Object.entries(sharedModules).map(async ([name, binding]) => {
+  const source = await read('shared/' + name + '.cjs');
+  return 'const ' + binding + ' = (() => {\nconst module = {exports: {}};\n' + source + '\nreturn module.exports;\n})();';
+}));
+
+const index = (await read('src/index.html'))
+  .replace('href="style.css"', 'href="/style.css?v=' + release + '"')
+  .replace('src="app.js"', 'src="/app.js?v=' + release + '"');
+const style = (await read('src/browser/workbench.css')).replace(
+  /font-size:\s*(\d+(?:\.\d+)?)px/g, (_, px) => 'font-size:calc(' + px + 'px * var(--font-scale,1))'
+);
+const assets = {
+  '/index.html': {type: 'text/html; charset=utf-8', body: index},
+  '/app.js': {type: 'text/javascript; charset=utf-8', body: [...shared, ...browser].join('\n')},
+  '/style.css': {type: 'text/css; charset=utf-8', body: style}
+};
+
+async function image(url, file) {
+  assets[url] = {type: 'image/png', base64: true, body: (await read(file, null)).toString('base64')};
+}
+
+for (const file of ['emblem.png', 'wordmark.png']) {
+  await image('/brand/' + file, 'src/brand/' + file);
+}
+const screenshots = path.join(webRoot, 'sop/screenshots');
+const images = await readdir(screenshots).catch(error => {
+  if (error.code === 'ENOENT') return [];
+  throw error;
+});
+for (const file of images.filter(file => file.endsWith('.png')).sort()) {
+  await image('/guide/' + encodeURIComponent(file), 'sop/screenshots/' + file);
+}
+
+const documents = await Promise.all([
+  ['新手快速入门.md', '新手快速入门 · 手把手教程'],
+  ['工作台操作手册.md', '工作台操作手册'],
+  ['知识库.md', '知识库']
+].map(async ([file, title]) => ({path: file, title, content: await read('sop/' + file)})));
+assets['/sop-docs.json'] = {type: 'application/json; charset=utf-8', body: JSON.stringify(documents)};
+
+await mkdir(path.join(webRoot, 'dist/server'), {recursive: true});
+await writeFile(path.join(webRoot, 'dist/assets.generated.js'), 'export default ' + JSON.stringify(assets));
+
 // Avoid a Windows/Node 24 worker-thread service stall during launcher builds.
-process.env.ESBUILD_WORKER_THREADS='0';
-const {build}=await import('esbuild');
-const files={'/index.html':'text/html; charset=utf-8','/app.js':'text/javascript; charset=utf-8','/style.css':'text/css; charset=utf-8'};
-const release='v1.0.7';
-const assets={};for(const [file,type] of Object.entries(files))assets[file]={type,body:await readFile('src'+file,'utf8')};
-assets['/app.js'].body=await readFile('../miniprogram/utils/task-model.js','utf8').then(s=>s.replace('module.exports=','const WorkspaceModel='))+'\n'+assets['/app.js'].body;
-assets['/app.js'].body=await readFile('../miniprogram/utils/localization.js','utf8').then(s=>s.replace('module.exports=','const Localization='))+'\n'+assets['/app.js'].body;
-assets['/app.js'].body=await readFile('../miniprogram/utils/particle-engine.js','utf8').then(s=>s.replace('module.exports=','const ParticleEngine='))+'\n'+assets['/app.js'].body;
-assets['/app.js'].body=await readFile('../miniprogram/utils/stats-model.js','utf8').then(s=>s.replace('module.exports=','const StatsModel='))+'\n'+assets['/app.js'].body;
-assets['/app.js'].body=await readFile('../miniprogram/utils/organization.js','utf8').then(s=>s.replace('module.exports=','const OrganizationModel='))+'\n'+assets['/app.js'].body;
-assets['/app.js'].body=await readFile('../miniprogram/utils/template-policy.js','utf8').then(s=>'const TemplatePolicy=(()=>{'+s.replace('module.exports=','return ')+'})();')+'\n'+assets['/app.js'].body;
-assets['/app.js'].body=await readFile('../miniprogram/utils/schedule-model.js','utf8').then(s=>'const ScheduleModel=(()=>{'+s.replace('module.exports=','return ')+'})();')+'\n'+assets['/app.js'].body;
-assets['/app.js'].body+='\n'+await readFile('src/enhancements.js','utf8')+'\n'+await readFile('src/community.js','utf8')+'\n'+await readFile('src/workspace-ui.js','utf8')+'\n'+await readFile('src/motion-ui.js','utf8')+'\n'+await readFile('src/particle-system.js','utf8')+'\n'+await readFile('src/experience-v104.js','utf8');
-assets['/style.css'].body+='\n'+await readFile('src/v2.css','utf8')+'\n'+await readFile('src/community.css','utf8')+'\n'+await readFile('src/workspace-ui.css','utf8')+'\n'+await readFile('src/motion-ui.css','utf8')+'\n'+await readFile('src/experience-v104.css','utf8');
-assets['/app.js'].body+='\n'+await readFile('src/organization-v105.js','utf8')+'\n'+await readFile('src/recovery-v105.js','utf8')+'\n'+await readFile('src/statistics-v105.js','utf8');
-assets['/style.css'].body+='\n'+await readFile('src/organization-v105.css','utf8')+'\n'+await readFile('src/recovery-v105.css','utf8')+'\n'+await readFile('src/statistics-v105.css','utf8');
-assets['/app.js'].body+='\n'+await readFile('src/login-v105.js','utf8');
-assets['/style.css'].body+='\n'+await readFile('src/login-v105.css','utf8');
-assets['/app.js'].body+='\n'+await readFile('src/avatar-v105.js','utf8')+'\n'+await readFile('src/tasks-v105.js','utf8');
-assets['/app.js'].body+='\n'+await readFile('src/presence-v105.js','utf8');
-assets['/app.js'].body+='\n'+await readFile('src/schedules-v107.js','utf8');
-assets['/style.css'].body+='\n'+await readFile('src/avatar-v105.css','utf8')+'\n'+await readFile('src/tasks-v105.css','utf8');
-assets['/style.css'].body+='\n'+await readFile('src/schedules-v107.css','utf8');
-assets['/style.css'].body=assets['/style.css'].body.replace(/font-size:\s*(\d+(?:\.\d+)?)px/g,(_,px)=>`font-size:calc(${px}px * var(--font-scale,1))`);
-assets['/index.html'].body=assets['/index.html'].body.replace(/<link rel="icon"[^>]*>/,'<link rel="icon" type="image/png" href="/brand/emblem.png">').replace('#183e36','#ff861b');
-assets['/index.html'].body=assets['/index.html'].body.replace('href="style.css"','href="/style.css?v='+release+'"').replace('src="app.js"','src="/app.js?v='+release+'"');
-for(const file of ['emblem.png','wordmark.png'])assets['/brand/'+file]={type:'image/png',base64:true,body:(await readFile('src/brand/'+file)).toString('base64')};
-const images=(await readdir('sop/screenshots').catch(()=>[])).filter(f=>f.endsWith('.png')).sort();
-for(const file of images)assets['/guide/'+encodeURIComponent(file)]={type:'image/png',base64:true,body:(await readFile('sop/screenshots/'+file)).toString('base64')};
-const documents=[{path:'新手快速入门.md',title:'新手快速入门 · 手把手教程',content:await readFile('sop/新手快速入门.md','utf8')},{path:'工作台操作手册.md',title:'工作台操作手册',content:await readFile('sop/工作台操作手册.md','utf8')},{path:'知识库.md',title:'知识库',content:await readFile('sop/知识库.md','utf8')}];assets['/sop-docs.json']={type:'application/json; charset=utf-8',body:JSON.stringify(documents)};
-await writeFile('src/assets.generated.js','export default '+JSON.stringify(assets));
-await mkdir('dist/server',{recursive:true});
-await build({absWorkingDir:webRoot,entryPoints:[path.join(webRoot,'src','worker.js')],outfile:path.join(webRoot,'dist','server','index.js'),bundle:true,format:'esm',platform:'browser',target:'es2022',minify:true});
+process.env.ESBUILD_WORKER_THREADS = '0';
+const {build} = await import('esbuild');
+await build({
+  absWorkingDir: webRoot,
+  entryPoints: ['src/worker.js'],
+  outfile: 'dist/server/index.js',
+  bundle: true,
+  format: 'esm',
+  platform: 'browser',
+  target: 'es2022',
+  minify: true
+});
 console.log('Worker and embedded assets built.');

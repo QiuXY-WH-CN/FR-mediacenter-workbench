@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {webcrypto} from 'node:crypto';
 import vm from 'node:vm';
-const require=createRequire(import.meta.url),source=readFileSync(new URL('../src/presence-v105.js',import.meta.url),'utf8');
+const require=createRequire(import.meta.url),source=readFileSync(new URL('../src/browser/presence.js',import.meta.url),'utf8');
 const people=[{id:'owner',name:'演示管理员',username:'demo_owner',role:'admin',owner:true,dept:'',status:'active',online:true},{id:'live',name:'演示伙伴一',username:'demo_live',role:'member',dept:'办公室',status:'active',online:true},{id:'away',name:'演示伙伴二',username:'demo_away',role:'member',dept:'办公室',status:'active',online:false}];
 const flush=async()=>{for(let i=0;i<12;i++)await Promise.resolve()};
 function statusElement(id){const text={textContent:''},classes=new Set();return {dataset:{presenceId:id},classList:{toggle(k,value){value?classes.add(k):classes.delete(k)}},classes,text,querySelector:()=>text}}

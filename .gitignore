@@ -4,6 +4,15 @@ node_modules/
 
 # Local runtime data and secrets
 .local/
+.codex/
+.cloudflared/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
 *.log
 *.db
 *.db-*
@@ -13,11 +22,8 @@ node_modules/
 *.tmp
 
 # Machine-local project and service configuration
-miniprogram/project.private.config.json
+project.private.config.json
 web/cloudflared-config.yml
-web/.env
-web/.env.*
-!web/.env.example
 
 # Built web server bundle (contains embedded SOP docs; build locally)
 web/dist/

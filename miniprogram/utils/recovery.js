@@ -3,7 +3,7 @@ const Engine=require('./particle-engine');
 // Only presentation preferences and fixed diagnostic codes reach local storage.
 // This module never serializes an Error, a page, an account or workspace content.
 const DISPLAY='fr.interface',DIAGNOSTICS='fr.localDiagnostics',OVERRIDE='fr.localAppearance';
-const APPROVED_KEYS=new Set(['fr.token','fr.connection','fr.language',DISPLAY,DIAGNOSTICS,OVERRIDE]);
+const APPROVED_KEYS=new Set(['fr.token','fr.connection','fr.language','fr.loginMemory','fr.loginCredential',DISPLAY,DIAGNOSTICS,OVERRIDE]);
 const CATEGORIES={runtime:'JS_RUNTIME',promise:'PROMISE_REJECTION',render:'UI_RENDER',canvas:'CANVAS_FALLBACK',storageRead:'STORAGE_READ',storageWrite:'STORAGE_WRITE',storageRemove:'STORAGE_REMOVE',schema:'CACHE_SCHEMA'};
 const TYPES=new Set(['Error','TypeError','RangeError','SyntaxError','ReferenceError']);
 const STYLE_VALUES=['off','constellation','fireflies','snow','petals','rain','orbits','stars','bubbles','random','rotate'];

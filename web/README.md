@@ -1,6 +1,6 @@
 # 冯如学媒协作工作台 · 网页与服务端
 
-当前版本 **v1.0.6**。服务端同时提供网页资源、业务接口和 `/mini/api` 小程序网关。多端使用同一份业务数据和账号设置。
+当前版本 **v1.1.0**。服务端同时提供网页资源、业务接口和 `/mini/api` 小程序网关。多端使用同一份业务数据和账号设置。
 
 ## 环境与构建
 
@@ -14,6 +14,17 @@ pnpm run dev
 ```
 
 手动 `dev` 不会重新构建资源，更新源码后须先运行 `build`。默认仅监听本机 `http://127.0.0.1:8766/`。
+
+## Windows x64 安装包
+
+先安装 Node.js 24、pnpm 和 Inno Setup 6，再在仓库根目录运行：
+
+```powershell
+pnpm --dir web install --frozen-lockfile
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/release-windows.ps1
+```
+
+安装包、便携 ZIP 和 SHA-256 清单写入 `发布版/`。如果编译器在自定义目录，可用 `-InstallerCompiler` 指定 `ISCC.exe`。安装后从开始菜单启动或停止本机工作台。便携版解压后双击 `启动工作台.cmd`。首次启动会在网页打开一次性初始化入口，管理员自行设置账号和密码。安装目录的 `.local/preview.db` 及备份在软件升级和卸载时保留。
 
 ## Windows 日常启动
 
@@ -42,7 +53,7 @@ $verifiedOldServerId = [int](Read-Host '输入已核验属于此工作区的旧�
 
 ## 固定公网访问
 
-当前项目使用 [https://fengrumedia.dpdns.org/](https://fengrumedia.dpdns.org/)，Cloudflare Tunnel 连接本机 8766 端口。公网可用需要网页源站运行、固定隧道连接正常及域名配置生效；不能仅凭进程存在或 DNS 可解析宣称已上线。
+Cloudflare Tunnel 可通过维护者的 HTTPS 域名连接本机 8766 端口。公网访问依赖网页源站、固定隧道以及域名配置。
 
 固定隧道配置保存在本机 `web/cloudflared-config.yml`，配置使用实际 tunnel ID 和本机凭据文件路径；凭据文件不应进入版本库。配置示意：
 
@@ -51,7 +62,7 @@ tunnel: YOUR_TUNNEL_ID
 credentials-file: C:\Users\YOUR_USER\.cloudflared\YOUR_TUNNEL_ID.json
 
 ingress:
-  - hostname: fengrumedia.dpdns.org
+  - hostname: workbench.example.com
     service: http://127.0.0.1:8766
   - service: http_status:404
 ```
@@ -68,7 +79,7 @@ ingress:
 
 ## 故障检查与版本核验
 
-先访问本机 `/api/info`，再访问公网 `/api/info`，比较版本号。当前构建应为 `v1.0.6`。网页脚本和样式带版本参数，资源响应禁用浏览器与 CDN 缓存；源站重启后公网隧道继续转发新的构建。
+先访问本机 `/api/info`，再访问公网 `/api/info`，比较版本号。当前构建应为 `v1.1.0`。网页脚本和样式带版本参数，资源响应禁用浏览器与 CDN 缓存；源站重启后公网隧道继续转发新的构建。
 
 启动失败时查看：
 
@@ -82,17 +93,12 @@ ingress:
 ## 验证
 
 ```powershell
-pnpm run build
-pnpm run test
-pnpm run test:workspace
-pnpm run test:mini
-pnpm run test:privacy
-node scripts/service-start-test.mjs
+pnpm run verify
 ```
 
 `service-start-test.mjs` 需 Windows PowerShell 与 CIM，使用隔离临时目录和 8893 测试端口，覆盖路径引用、陌生进程保护、备份与构建失败、健康检查、重复启动及旧实例迁移。不要在该端口已被其他程序占用时强制结束它。
 
-浏览器与多端交互测试见 `package.json`。本机 Playwright 如未安装在项目中，可使用 `PLAYWRIGHT_MODULE` 指向已有模块。测试在隔离数据库运行，不使用真实成员账号。
+`verify` 先构建网页，再生成微信端共用模块并运行回归。设置 `PLAYWRIGHT_MODULE` 为 Playwright 的 `index.mjs` 路径后，可追加 `--browser` 使用 Edge 执行浏览器测试。Windows 默认路径安装了微信开发者工具时，可追加 `--native-compiler` 校验 WXML、WXSS 与 JS。测试使用隔离数据库和虚构账号。
 
 ## 界面与文档
 
@@ -114,13 +120,13 @@ dist/      构建后的服务
 .local/    本机数据库、备份与日志，不提交
 ```
 
-已有数据库在更新服务前备份至 `.local/backups/`。`.env`、`.local/`、真实隧道凭据、初始化令牌和小程序密钥不得提交到公开仓库。未配置 `BOOTSTRAP_HASH` 时禁止首管理员初始化，不使用公开默认口令。版本按 `v1.0.5 → v1.0.6` 的补丁序列递增。
+已有数据库在更新服务前备份至 `.local/backups/`。`.env`、`.local/`、真实隧道凭据、初始化令牌和小程序密钥不得提交到公开仓库。未配置 `BOOTSTRAP_HASH` 时禁止首管理员初始化，不使用公开默认口令。源码版本以 `package.json` 为准。
 
 
 ## v1.0.5 验证与恢复
 
 新增核心回归：`pnpm run test:login`、`pnpm run test:statistics`、`pnpm run test:tasks:v105`、`pnpm run test:recovery`、`pnpm run test:rollback`。组织、任务、头像、验证码/统计与安全中心另有真实浏览器专项；原生用官方 WCC/WXSS 完整编译，测试资料全部隔离。
 
-`scripts/rollback-local.ps1` 只恢复程序包且验证工作区路径，保留最新数据库；回退只读保护禁止旧代码执行写入或新密码登录。正常重新构建启动解除回退模式。锁定管理员仅本机操作员可用 `scripts/admin-reset.mjs --username ADMIN_USERNAME --issue`，重置链接仅写入 .local。本机诊断不向服务端上传，站长统计采用 14 天有界脱敏请求记录。
+`scripts/rollback-local.ps1` 只恢复程序包且验证工作区路径，保留最新数据库；回退只读保护禁止旧代码执行写入或新密码登录。正常重新构建启动解除回退模式。锁定管理员仅本机操作员可用 `node scripts/admin-reset.mjs --username ADMIN_USERNAME --issue`。链接默认使用本机服务地址，部署到 HTTPS 域名时可加 `--origin https://workbench.example.com`。重置链接仅写入 `.local/`。本机诊断不向服务端上传，站长统计采用 14 天有界脱敏请求记录。
 
 依赖安全：ORM 固定为 0.45.2，修复 [SQL 标识符转义漏洞](https://github.com/advisories/GHSA-gpj5-g38j-94v9)；开发工具间接引用的 esbuild 通过 `pnpm-workspace.yaml` 固定为 0.25.11。发布前使用 npm 官方接口运行完整 `pnpm audit`，本次生产和开发依赖均未检出已知漏洞。

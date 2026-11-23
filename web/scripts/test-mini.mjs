@@ -4,11 +4,12 @@ import {createHash,createHmac,randomBytes} from 'node:crypto';
 import worker from '../dist/server/index.js';
 import {database} from './local-db.mjs';
 import {createMiniGateway} from './mini-gateway.mjs';
+import renderSop from '../../miniprogram/utils/sop-md.js';
 
 const DB = database();
 for(const f of (await readdir('drizzle')).filter(x=>x.endsWith('.sql'))) DB.sqlite.exec(await readFile('drizzle/'+f,'utf8'));
 const env = {DB, BOOTSTRAP_HASH: createHash('sha256').update('test-initialization-token').digest('hex')};
-const bridge = {appid:'wx329dab0b8d30dec7', bridgeSecret:'test-bridge-secret-0123456789-0123456789'};
+const bridge = {appid:'fixture-app', bridgeSecret:'test-bridge-secret-0123456789-0123456789'};
 const mini = createMiniGateway({worker, DB, bridgeConfig: bridge});
 
 const origin = 'https://local.test';
@@ -73,6 +74,10 @@ assert.ok(state.body.events.some(e=>e.id===event),'mini should see web-created e
 await miniCall('events/create',{name:'小程序创建活动',date:'2026-10-11',allDay:true},miniToken);
 state=(await web('state',null,owner.cookie)).body;
 assert.ok(state.events.some(e=>e.name==='小程序创建活动'),'web should see mini-created event');
+await miniCall('events/delete',{id:event},'',401);
+assert.ok((await web('state',null,owner.cookie)).body.events.some(e=>e.id===event));
+await miniCall('events/delete',{id:event},miniToken);
+assert.ok(!(await web('state',null,owner.cookie)).body.events.some(e=>e.id===event),'web sees native deletion of a web-created schedule');
 
 // Cloud WeChat binding, status, login and rebinding/unbind.
 await cloudCall('wechat/login',{},'',{appid:bridge.appid,openid:'openid-owner'},403);
@@ -96,8 +101,15 @@ const sopLogin=await miniCall('login',{username:'owner',password});
 const docs=await miniCall('sop',{},sopLogin.sessionToken);
 assert.ok(Array.isArray(docs.body)&&docs.body.length>0,'sop should return documents');
 const guide=docs.body.find(d=>d.path==='工作台操作手册.md');
-assert.equal(guide.images.length,8);
-for(const img of guide.images){const response=await worker.fetch(new Request('https://local.test'+img.url),{DB});assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/png');}
+const imageUrls=Array.from(guide.content.matchAll(/^!\[[^\]]*\]\(screenshots\/([^)]+)\)\s*$/gm),match=>origin+'/guide/'+encodeURIComponent(match[1]));
+assert.ok(imageUrls.length>0,'The guide includes screenshots');
+const rendered=renderSop(guide.content,origin);
+assert.deepEqual(Array.from(rendered.html.matchAll(/<img src="([^"]+)"/g),match=>match[1]),imageUrls);
+for(const url of imageUrls){
+  const response=await worker.fetch(new Request(url),{DB});
+  assert.equal(response.status,200,url);
+  assert.equal(response.headers.get('content-type'),'image/png');
+}
 
 console.log('PASS: mini gateway sessions, logout, cross-device sync, cloud WeChat identity, health and SOP.');
 DB.sqlite.close();

@@ -24,23 +24,24 @@ cd ../web
 启动本地工作台.cmd
 ```
 
-2. 用微信开发者工具打开当前 `miniprogram/` 目录。
+2. 在仓库根目录运行 `pnpm --dir web run prepare:mini`，生成小程序使用的共享模块。
+3. 用微信开发者工具打开当前 `miniprogram/` 目录。源码中的 `touristappid` 用于本地体验，真机预览和发行请导入维护者的 AppID。
+4. 模拟器连接本机网页服务 `http://127.0.0.1:8766`。开发期需要访问回环地址时，可在开发者工具的本地设置中关闭域名校验。
+5. 真机在“连接设置”填写工作台部署地址。小程序的直连部署地址使用 HTTPS，并在小程序后台加入 request 合法域名。
 
-3. 默认连接 `https://fengrumedia.dpdns.org`；如需本机调试，可在“连接设置”中改为 `http://127.0.0.1:8766`。
-
-4. 手机真机预览前，需在小程序后台把 `https://fengrumedia.dpdns.org` 加入“request 合法域名”，并在开发者工具中重新编译/预览。
+升级后需要重新登录一次，已保存的连接设置仍可使用。原先沿用内置地址的用户需在“连接设置”填写网页端部署地址。组织发行版可在部署副本的 `config.js` 中设置 `directBaseUrl` 或 `cloudEnv`，并在开发者工具中配置部署身份。
 
 ## 公网访问
 
-服务端使用 Cloudflare Tunnel 暴露到 `https://fengrumedia.dpdns.org`：
+服务端可通过 Cloudflare Tunnel 使用维护者自己的 HTTPS 域名。例如：
 
 ```bash
 cd ../web
-cloudflared tunnel create fengrumedia
-cloudflared tunnel route dns fengrumedia fengrumedia.dpdns.org
+cloudflared tunnel create WORKBENCH_TUNNEL
+cloudflared tunnel route dns WORKBENCH_TUNNEL workbench.example.com
 ```
 
-然后把 `web/cloudflared-config.yml` 中的 `YOUR_TUNNEL_ID` 和 `credentials-file` 替换为实际值，运行根目录的 `启动全部云服务.cmd`。
+复制 `web/cloudflared-config.example.yml` 为同目录的 `cloudflared-config.yml`，将隧道 ID、凭据路径和主机名换成实际值，再运行根目录的 `启动全部云服务.cmd`。已有固定隧道可继续使用本机配置。
 
 ## 云函数方式
 
@@ -48,7 +49,7 @@ cloudflared tunnel route dns fengrumedia fengrumedia.dpdns.org
 
 ```text
 MINI_APP_ID=小程序 AppID
-LOCAL_API_ORIGIN=https://fengrumedia.dpdns.org
+LOCAL_API_ORIGIN=https://workbench.example.com
 BRIDGE_SECRET=与 web/.local/mini-server.json 中 bridgeSecret 一致
 ```
 

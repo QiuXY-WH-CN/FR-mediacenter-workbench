@@ -1,20 +1,21 @@
 # 发布前隐私检查
 
-本项目把运行时数据和机器配置放在 Git 忽略范围内。`.local/`、数据库文件、日志、Cloudflare 隧道配置、网页 `.env` 文件和微信开发者工具的 `project.private.config.json` 不应进入发布包或远程仓库。已有本机文件可以继续使用，但应保持未跟踪状态。
+运行时数据库、备份、日志、凭据和机器配置保存在本机。`.local/`、真实 `.env` 文件、Cloudflare 隧道配置和微信开发者工具的 `project.private.config.json` 都在 Git 忽略范围内。小程序 AppID、原始 ID、云环境和服务地址由维护者在部署副本中配置，固定公网域名由本机的 `web/cloudflared-config.yml` 提供。
 
-发布前在项目根目录运行：
+在项目根目录核验工作区、准备推送的提交和 Windows 发布暂存目录。最后一条的路径替换为打包脚本打印的实际暂存目录。
 
 ```powershell
-node tools/privacy-audit.mjs
-node tools/privacy-audit.mjs --strict release\workbench
+node tools/privacy-audit.mjs --strict
+node tools/privacy-audit.mjs --strict --range 'origin/main..HEAD'
+node tools/privacy-audit.mjs --strict '发布版\workbench-v1.1.0-win-x64'
 ```
 
-第一条检查 Git 会纳入的文件，重点拦截绝对用户路径、私钥和凭据样式的值。第二条检查发布暂存目录，并额外拦截微信 AppID、命名隧道域名和动态公网域名。审计失败时先移除值或改用安装者本地配置，再继续打包。
+审计拦截本机数据文件、绝对用户路径、私钥和常见凭据格式。严格模式还检查微信部署标识和常见隧道域名。提交范围检查会检查每次新增或修改的文件，包括随后被删除的内容。审计日志只报告相对路径、行号和发现类型。发布者还需核对附件清单及业务样例，确认可以公开。
 
-如果某台机器以前已经把本地配置加入索引，补充 `.gitignore` 不会自动取消跟踪。保留本机文件并执行：
+此前被 Git 跟踪的本机配置需要单独从索引移除。例如，下列命令保留本机文件。
 
 ```powershell
 git rm --cached -- miniprogram/project.private.config.json
 ```
 
-然后确认 `git status --short` 只显示索引删除，不要把该文件重新加入提交。生产服务地址、云环境标识和小程序 AppID 仍属于部署配置；制作通用 Windows 包时，应通过安装步骤或本地配置文件注入，不要把当前部署值复制到公共压缩包。
+如果历史提交包含有效凭据，应先吊销或轮换凭据，再评估公开历史的处理方式。

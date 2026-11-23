@@ -2,7 +2,7 @@
   "miniprogramRoot": "./",
   "cloudfunctionRoot": "cloudfunctions/",
   "setting": {
-    "urlCheck": false,
+    "urlCheck": true,
     "es6": true,
     "enhance": true,
     "postcss": true,
@@ -17,7 +17,7 @@
     "uglifyFileName": false,
     "checkInvalidKey": true,
     "checkSiteMap": true,
-    "uploadWithSourceMap": true,
+    "uploadWithSourceMap": false,
     "compileHotReLoad": false,
     "useMultiFrameRuntime": true,
     "useApiHook": true,
@@ -44,7 +44,7 @@
     "swc": false,
     "disableSWC": true
   },
-  "appid": "wx329dab0b8d30dec7",
+  "appid": "touristappid",
   "projectname": "冯如学媒协作工作台",
   "libVersion": "3.17.3",
   "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",

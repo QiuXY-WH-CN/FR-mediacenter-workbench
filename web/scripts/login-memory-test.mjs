@@ -23,20 +23,62 @@ capable=true;pendingWrite=false;const writing=memory.success(config,'stale_login
 await memory.success(config,'remember_user',password,true);secure.get('fr.loginCredential').record='incorrect-record';assert.equal((await memory.load(config)).password,'','Only the exact consented record may be read.');memory.forget();
 
 // Test session persistence and presence using the real API module with isolated transport.
-const cache=new Map([['fr.token','old-persistent-token']]);let response,transport='ok',forgot=0;
+const cache=new Map([['fr.token','old-persistent-token']]);let response,transport='ok',forgot=0,pendingRequest;
 const recovery={normalizeConnection:(x,d)=>({...d,...x}),safeRead:(k,d)=>cache.get(k)??d,safeWrite:(k,v)=>{cache.set(k,v);return true},safeRemove:k=>{cache.delete(k);return true},applySettings:x=>x||{},saveDisplay(){},capture(){}};
 const defaults={transport:'direct',directBaseUrl:'https://example.test',pollMs:30000};
-const nativeWx={request:o=>transport==='fail'?o.fail({}):o.success({statusCode:200,data:response})};
-const apiContext={wx:nativeWx,module:{exports:{}},require:p=>p.includes('config')?defaults:p.includes('login-memory')?{forgetPassword(){forgot++}}:recovery,Set,Object,Number,Error,Promise,setTimeout,clearTimeout};
+const nativeWx={request(o){
+ if(transport==='pending'){pendingRequest=o;return}
+ if(transport==='fail')o.fail({});
+ else o.success({statusCode:200,data:response});
+}};
+const apiContext={wx:nativeWx,module:{exports:{}},require:p=>p.includes('config')?defaults:p.includes('login-memory')?{realm:memory.realm,forgetPassword(){forgot++}}:recovery,Set,Object,Number,Error,Promise,setTimeout,clearTimeout};
 vm.runInNewContext(await readFile('../miniprogram/services/api.js','utf8'),apiContext);const api=apiContext.module.exports;
+assert.equal(api.token(),'','Legacy tokens without a connection realm require re-authentication');
+assert.equal(cache.has('fr.token'),false);
+cache.set('fr.token',{value:'previous-origin-token',realm:'direct:https://previous.example.test'});
+assert.equal(api.token(),'','A saved token for a different server is never reused');
+assert.equal(cache.has('fr.token'),false);
 response={status:200,sessionToken:'session-only-token',body:{ok:true}};await api.call('login',{username:'first_user',password,remember:false});assert.equal(api.token(),'session-only-token');assert.equal(cache.has('fr.token'),false,'Session-only sign-in deletes any older persisted token.');
-response={status:200,sessionToken:'remembered-token',body:{ok:true}};await api.call('login',{username:'first_user',password,remember:true});assert.equal(cache.get('fr.token'),'remembered-token');
+response={status:200,sessionToken:'remembered-token',body:{ok:true}};await api.call('login',{username:'first_user',password,remember:true});assert.deepEqual(structuredClone(cache.get('fr.token')),{value:'remembered-token',realm:'direct:https://example.test'});
 response={status:200,body:{user:{id:'one',role:'member'},people:[],events:[],tasks:[],settings:{}}};await api.refresh(true);transport='fail';await assert.rejects(()=>api.call('presence',{online:true}));assert.equal(api.isReadOnly(),false,'Presence transport failures never turn task data read-only.');
 await assert.rejects(()=>api.call('tasks/action',{id:'test',action:'accept'}));assert.equal(api.isReadOnly(),true);
 transport='ok';response={status:200,body:{ok:true}};await api.call('presence',{online:false});assert.equal(api.isReadOnly(),true,'Presence remains available while a workspace snapshot is read-only.');
 await api.call('logout',{});assert.equal(api.token(),'');assert.equal(cache.has('fr.token'),false);
 response={status:200,body:{ok:true}};await api.call('recover',{token:'synthetic-reset',password});assert.equal(forgot,1);
 response={status:200,body:{reviewMode:true,user:null}};await api.call('info');response={status:200,body:{ok:true}};await api.call('recover',{token:'synthetic-reset',password});assert.equal(forgot,1,'Review-mode security actions preserve the sealed local vault.');
+
+const userState=id=>({status:200,body:{user:{id,role:'member'},people:[],events:[],tasks:[],settings:{}}});
+const signIn=async id=>{
+ response={status:200,sessionToken:'token-for-'+id,body:{ok:true}};
+ await api.call('login',{username:id,password,remember:true});
+ response=userState(id);
+ await api.refresh(true);
+};
+await signIn('first_user');
+for(const status of [401,403]){
+ transport='pending';
+ const refresh=api.refresh(true), old=pendingRequest;
+ api.setConnection({...defaults,directBaseUrl:'https://server-'+status+'.example.test'});
+ transport='ok';
+ await signIn('user_'+status);
+ old.success({statusCode:200,data:{status,body:{error:'Previous login no longer valid'}}});
+ await assert.rejects(refresh,{code:'SESSION_CHANGED'});
+ assert.equal(api.getState().user.id,'user_'+status,'Late access denial cannot clear a new login');
+}
+transport='pending';
+const logout=api.call('logout',{}), oldLogout=pendingRequest;
+transport='ok';
+await signIn('latest_user');
+oldLogout.success({statusCode:200,data:{status:200,body:{ok:true}}});
+await assert.rejects(logout,{code:'SESSION_CHANGED'});
+assert.equal(api.getState().user.id,'latest_user','Late logout cannot clear a new login on the same server');
+transport='pending';
+const write=api.call('tasks/action',{id:'old-task',action:'accept'}), oldWrite=pendingRequest;
+transport='ok';
+await signIn('new_user');
+oldWrite.fail({});
+await assert.rejects(write,{code:'SESSION_CHANGED'});
+assert.equal(api.isReadOnly(),false,'An old transport failure cannot mark a new account read-only');
 
 let authPage,review=true,loads=0,saves=0,forgets=0,active=false,navigated=0;
 const authMemory={supported:()=>true,realm:memory.realm,load:async()=>{loads++;return {remember:true,username:'historical_user',password,secure:true}},success:async()=>{saves++;return true},forget(){forgets++},forgetPassword(){forgets++}};
